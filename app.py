@@ -60,8 +60,8 @@ for tk in tickers:
     p = (np.exp(r * dt) - d) / (u - d)
     
     stock_tree = {}
-    option_tree = {}
     delta_tree = {}
+    option_tree = {}
     
     j_terminal = np.arange(N + 1)
     stock_tree[N] = S0_val * (u ** (N - j_terminal)) * (d ** j_terminal)
@@ -77,14 +77,25 @@ for tk in tickers:
         intrinsic = np.maximum(S0_val - stock_tree[i], 0.0)
         option_tree[i] = np.maximum(continuation, intrinsic)
         
-    V_0 = option_tree
-    delta_root = float(delta_tree) if N > 0 else 0.0
+    # --- FIXED TYPE-SAFE RISK GREEKS CALCULATION ---
+    V_0 = float(option_tree[0][0])
+    delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
     
     if N >= 2:
-        h = stock_tree - stock_tree
-        gamma_root = ((option_tree - option_tree) / (stock_tree - stock_tree) - 
-                      (option_tree - option_tree) / (stock_tree - stock_tree)) / (0.5 * h)
-        theta_root = (option_tree - V_0) / (2 * dt) / 365
+        V_up_up = option_tree[2][0]
+        V_up_down = option_tree[2][1]
+        V_down_down = option_tree[2][2]
+        
+        S_up_up = stock_tree[2][0]
+        S_up_down = stock_tree[2][1]
+        S_down_down = stock_tree[2][2]
+        
+        # Avoid direct dictionary references by computing across discrete step 2 array nodes
+        delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
+        delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
+        
+        gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
+        theta_root = (V_up_down - V_0) / (2 * dt) / 365
     else:
         gamma_root, theta_root = 0.0, 0.0
         
@@ -142,7 +153,7 @@ with col_trade:
 with col_status:
     st.subheader("📡 FIX Protocol Order Transmission Feed")
     if route_execution:
-        target_row = df_portfolio[df_portfolio["Ticker"] == target_ticker].iloc
+        target_row = df_portfolio[df_portfolio["Ticker"] == target_ticker].iloc[0]
         premium = target_row["Option Price"]
         delta_exposure = target_row["Delta (Δ)"] * order_size * 100
         
@@ -188,7 +199,7 @@ st.plotly_chart(fig, use_container_width=True)
 # --- MULTI-TAB EXCEL BUFFER STORAGE PIPELINE ---
 excel_buffer = io.BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-    df_portfolio.to_excel(writer, index=False, sheet_name='Portfolio_Asset_Weights')
+    df_portfolio.drop(columns=["_raw_w", "_delta", "_gamma", "_theta"]).to_excel(writer, index=False, sheet_name='Portfolio_Asset_Weights')
 excel_data = excel_buffer.getvalue()
 
 st.sidebar.markdown("---")
