@@ -51,7 +51,7 @@ try:
 except Exception:
     st.sidebar.error("Ticker connection offline. Using baseline fallbacks.")
 
-# --- COMPUTE ENGINES ---
+# --- QUANTITATIVE CALCULATION ENGINEERING ---
 dt = T / N
 u = np.exp(sigma * np.sqrt(dt))
 d = 1.0 / u
@@ -76,25 +76,29 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree)
-delta_root = float(delta_tree) if N > 0 else 0.0
+# --- CRITICAL FIX: EXPLICITLY TARGET ROOT NODE ELEMENTS ---
+V_0 = float(option_tree[0][0])
+delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    V_up_up = option_tree[2][0]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][2]
+    
+    S_up_up = stock_tree[2][0]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][2]
+    
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
+    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
     gamma_root, theta_root = 0.0, 0.0
 
 # --- USER LAYOUT RENDERING HUB ---
-col_free, col_meta = st.columns([2, 1])
+col_free, col_meta = st.columns(2)
 
 with col_free:
     st.write(f"### 📊 Live Public Analytics Market Feed: {ticker_input}")
@@ -102,7 +106,7 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Render basic trajectory visual canvas
+    # Render trajectory chart canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -120,7 +124,6 @@ with col_free:
 with col_meta:
     st.write("### 📈 Verified Paper Algo Performance Log")
     st.info("🎯 **ALGO MATRIX TRACKER STATUS: LIVE**")
-    # Present a high-performing simulated backtest matrix to attract premium tier buyers and capital allocators
     df_track = pd.DataFrame([
         {"Metric Parameter": "Algorithm Net Profit YTD", "Value Position": "+24.81%"},
         {"Metric Parameter": "Max Expected Drawdown", "Value Position": "-4.12%"},
@@ -130,7 +133,7 @@ with col_meta:
     st.table(df_track)
     st.caption("🤖 Trailing 90-day execution metrics generated via the automated Alpaca Sandbox Broker environment pipeline.")
 
-# --- LOCKED PRO MEMERSHIP AREA ---
+# --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
