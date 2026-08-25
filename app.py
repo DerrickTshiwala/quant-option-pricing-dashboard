@@ -126,7 +126,7 @@ st.plotly_chart(fig, use_container_width=True)
 # --- DATA STORAGE MANAGEMENT & USER ACCESS ---
 st.write("### 📋 Dynamic Execution Ledger Matrix")
 
-# Excel Buffer formulation
+# Excel Buffer formulation using openpyxl engine
 excel_buffer = io.BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
     df_ledger.to_excel(writer, index=False, sheet_name='Delta_Hedging_Ledger')
