@@ -78,17 +78,17 @@ for tk in tickers:
         option_tree[i] = np.maximum(continuation, intrinsic)
         
     # --- FIXED TYPE-SAFE RISK GREEKS CALCULATION ---
-    V_0 = float(option_tree)
-    delta_root = float(delta_tree) if N > 0 else 0.0
+    V_0 = float(option_tree[0][0])
+    delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
     
     if N >= 2:
-        V_up_up = option_tree
-        V_up_down = option_tree
-        V_down_down = option_tree
+        V_up_up = option_tree[2][0]
+        V_up_down = option_tree[2][1]
+        V_down_down = option_tree[2][2]
         
-        S_up_up = stock_tree
-        S_up_down = stock_tree
-        S_down_down = stock_tree
+        S_up_up = stock_tree[2][0]
+        S_up_down = stock_tree[2][1]
+        S_down_down = stock_tree[2][2]
         
         delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
         delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
@@ -138,7 +138,7 @@ st.write("### 📋 Individual Underlier Asset Allocation Breakdown")
 cleaned_display_df = df_portfolio.drop(columns=["_raw_w", "_delta", "_gamma", "_theta"])
 st.dataframe(cleaned_display_df, use_container_width=True)
 
-# --- AUTOMATED ORDER ROUTING SYSTEM (BUG FIX APPLIED HERE) ---
+# --- AUTOMATED ORDER ROUTING SYSTEM ---
 st.markdown("---")
 st.write("### 🤖 Institutional Order Routing Execution Engine")
 col_trade, col_status = st.columns(2)
@@ -196,7 +196,7 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# --- MULTI-TAB EXCEL BUFFER STORAGE PIPELINE (BUG FIX APPLIED HERE) ---
+# --- MULTI-TAB EXCEL BUFFER STORAGE PIPELINE ---
 excel_buffer = io.BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
     cleaned_display_df.to_excel(writer, index=False, sheet_name='Portfolio_Asset_Metrics')
