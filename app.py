@@ -21,8 +21,6 @@ st.sidebar.info(
 st.sidebar.markdown("---")
 
 # --- HIGH-SECURITY IN-MEMORY PASSKEY MATRIX ---
-# This dictionary simulates a database in system runtime memory for R0,00 cost
-# Hardcoded SHA-256 hashes of client-specific premium access credentials
 valid_user_hashes = {
     "user_alpha": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", # Real Key: QuantPro1
     "user_beta": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",  # Real Key: QuantPro2
@@ -30,7 +28,6 @@ valid_user_hashes = {
 }
 
 def verify_passkey(input_key):
-    """Encrypts and matches incoming credentials safely against memory matrices"""
     hashed_input = hashlib.sha256(input_key.encode()).hexdigest()
     for user, pass_hash in valid_user_hashes.items():
         if hashed_input == pass_hash:
@@ -108,17 +105,18 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree)
-delta_root = float(delta_tree) if N > 0 else 0.0
+# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
+V_0 = float(option_tree[0][0])
+delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
+    V_up_up = option_tree[2][0]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][2]
     
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    S_up_up = stock_tree[2][0]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][2]
     
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
