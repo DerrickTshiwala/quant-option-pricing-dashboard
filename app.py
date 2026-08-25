@@ -54,7 +54,7 @@ if tier_mode == "Institutional Pro ($49/mo)":
 
 if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.markdown("---")
-    # DIRECT LIVE CONNECTION TO YOUR PAYSTACK BILLING PAGE
+    # THE RE-TARGETED SECURE BILLING PORTAL
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
 
@@ -105,18 +105,18 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
-V_0 = float(option_tree[0][0])
-delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
+# --- TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
+V_0 = float(option_tree)
+delta_root = float(delta_tree) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][0]
-    V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
+    V_up_up = option_tree
+    V_up_down = option_tree
+    V_down_down = option_tree
     
-    S_up_up = stock_tree[2][0]
-    S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
+    S_up_up = stock_tree
+    S_up_down = stock_tree
+    S_down_down = stock_tree
     
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
