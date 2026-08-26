@@ -213,10 +213,12 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
-def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
-    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
-        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
-        st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
-        return
-    headers = {
-        "APCA-API-KEY-ID": key_id,
+if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
+    st.write("### 🏛️ Premium Quantitative Desk Layer")
+    st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
+    
+    g1, g2, g3 = st.columns(3)
+    g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
+    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
+    g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
+    
