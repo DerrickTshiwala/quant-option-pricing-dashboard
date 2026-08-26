@@ -166,11 +166,14 @@ if N >= 2:
     V_up_up = option_tree[2][0]
     V_up_down = option_tree[2][1]
     V_down_down = option_tree[2][2]
+    
     S_up_up = stock_tree[2][0]
     S_up_down = stock_tree[2][1]
     S_down_down = stock_tree[2][2]
+    
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
+    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -213,6 +216,7 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
+# --- SECURE USER INTERFACE ROUTER ---
 if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     st.write("### 🏛️ Premium Quantitative Desk Layer")
     st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
@@ -220,5 +224,3 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     g1, g2, g3 = st.columns(3)
     g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
     g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
-    g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
-    
