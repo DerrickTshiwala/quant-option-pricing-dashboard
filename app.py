@@ -105,7 +105,7 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- CRITICAL FIX: EXPLICITLY EXTRACT ELEMENT FROM THE ROOT KEY GRID ---
+# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
@@ -195,12 +195,12 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     
     with v_col2:
         fig_var = go.Figure()
-        fig_var.add_trace(go.Scatter(x=simulated_losses, y=np.zeros_like(simulated_losses), mode='markers', opacity=0.0, showlegend=False))
+        fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
         fig_var.add_shape(
             type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
             yref="paper", line=dict(color="Crimson", width=3, dash="dot")
         )
-        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Risk Vector Cut-Off Matrix", height=280, margin=dict(l=10, r=10, t=10, b=10))
+        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
     st.write("#### 🤖 Simulated FIX Order Router Core Console")
