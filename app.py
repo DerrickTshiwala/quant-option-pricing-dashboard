@@ -105,7 +105,7 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
+# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
@@ -196,7 +196,6 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     with v_col2:
         fig_var = go.Figure()
         fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        # Add explicit vertical boundary tracking anchor line
         fig_var.add_shape(
             type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
             yref="paper", line=dict(color="Crimson", width=3, dash="dot")
