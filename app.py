@@ -164,7 +164,7 @@ with col_meta:
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
-st.write("### ### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
+st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
 if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
@@ -174,7 +174,7 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
     g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
     
-    # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-Risk (VaR) PARAMETRIC HISTOGRAM ENGINE ---
+    # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
     st.markdown("---")
     st.write("### 📉 Premium Risk Profiling: Value-at-Risk (VaR) Distribution")
     
@@ -195,16 +195,12 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     
     with v_col2:
         fig_var = go.Figure()
-        fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        
-        # Add explicit vertical line anchor indicating the exact value threshold boundary
+        fig_var.add_trace(go.Scatter(x=simulated_losses, y=np.zeros_like(simulated_losses), mode='markers', opacity=0.0, showlegend=False))
         fig_var.add_shape(
-            type="line",
-            x0=var_threshold, y0=0, x1=var_threshold, y1=1,
-            yref="paper",
-            line=dict(color="Crimson", width=3, dash="dot")
+            type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
+            yref="paper", line=dict(color="Crimson", width=3, dash="dot")
         )
-        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
+        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Risk Vector Cut-Off Matrix", height=280, margin=dict(l=10, r=10, t=10, b=10))
         st.plotly_chart(fig_var, use_container_width=True)
     
     st.write("#### 🤖 Simulated FIX Order Router Core Console")
@@ -217,3 +213,6 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
         """, language="text")
         st.success(f"✔️ Execution Order logged. Rebalance requirement to freeze risk: **{delta_root * order_size * 100:.2f} shares** of {ticker_input}.")
 else:
+    st.error("🔒 Section Locked. Select 'Institutional Pro' in the side menu and enter your valid member passkey to unlock the professional risk metrics layer and value-at-risk projections.")
+
+st.markdown("---")
