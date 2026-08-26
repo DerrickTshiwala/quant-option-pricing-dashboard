@@ -55,7 +55,7 @@ def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
     except Exception:
         return False
 
-# --- INITIALIZE IN-MEMORY AUTONOMOUS DATABASE ---
+# --- INITIALIZE IN-MEMORY AUTONOMOUS DATABASE & CACHE TENSORS ---
 if "user_db" not in st.session_state:
     st.session_state["user_db"] = {
         "user_alpha": hashlib.sha256("QuantPro99_A".encode()).hexdigest(),
@@ -63,6 +63,10 @@ if "user_db" not in st.session_state:
     }
 if "order_history" not in st.session_state:
     st.session_state["order_history"] = []
+if "is_pro_authenticated" not in st.session_state:
+    st.session_state["is_pro_authenticated"] = False
+if "current_active_user" not in st.session_state:
+    st.session_state["current_active_user"] = None
 
 # --- LIVE BROKER ACCOUNT ROUTER SETUP ---
 ALPACA_API_KEY = st.sidebar.text_input("🔑 Alpaca API Key ID", value="MOCK_KEY_ID", type="password")
@@ -73,23 +77,24 @@ ALPACA_BASE_URL = "https://alpaca.markets"
 st.sidebar.header("🔐 Premium Access Console")
 tier_mode = st.sidebar.radio("Account Subscription Tier", ["Free Tier Look-Up", "Institutional Pro ($49/mo)"])
 
-authenticated = False
-active_user = None
-
 if tier_mode == "Institutional Pro ($49/mo)":
     client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
         hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
         for user, stored_hash in st.session_state["user_db"].items():
             if hashed_input == stored_hash:
-                authenticated = True
-                active_user = user
-                st.sidebar.success(f"Acknowledge: {active_user.upper()} online.")
+                st.session_state["is_pro_authenticated"] = True
+                st.session_state["current_active_user"] = user
                 break
-        if not authenticated:
+        if st.session_state["is_pro_authenticated"]:
+            st.sidebar.success(f"Acknowledge: {st.session_state['current_active_user'].upper()} online.")
+        else:
             st.sidebar.error("❌ Token invalid. Complete your subscription to receive a unique automated access token.")
+else:
+    st.session_state["is_pro_authenticated"] = False
+    st.session_state["current_active_user"] = None
 
-if tier_mode == "Free Tier Look-Up" or not authenticated:
+if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticated"]:
     st.sidebar.markdown("---")
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
@@ -155,8 +160,8 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- DIRECT VALUE EXTRACTIONS BY KEY INDEX (THE DEFINITIVE FIX) ---
-V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else float(option_tree)
+# --- THE RESOLUTION: TARGET EXPLICIT CELL COORDINATE ROOT ELEMENT ARRAYS ---
+V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
 delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
 if N >= 2 and isinstance(option_tree, dict) and isinstance(stock_tree, dict):
@@ -207,9 +212,3 @@ with col_meta:
     ])
     st.table(df_track)
 
-# --- LOCKED PRO MEMBERSHIP AREA ---
-st.markdown("---")
-
-def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
-    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
-        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
