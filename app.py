@@ -117,16 +117,17 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree)
-delta_root = float(delta_tree) if N > 0 else 0.0
+# --- CRITICAL FIX: EXPLICITLY EXTRACT THE CELL ROOT VECTOR DATA ELEMENT ---
+V_0 = float(option_tree[0][0])
+delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    V_up_up = option_tree[2][0]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][2]
+    S_up_up = stock_tree[2][0]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][2]
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
@@ -170,9 +171,9 @@ with col_meta:
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
-st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
+st.write("### ### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
-# FLAT EXECUTION HANDLER: Eliminates deep button nesting crashes completely
+# FLAT EXECUTION HANDLER: Eliminates button nesting layout crashes completely
 def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
         st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
@@ -211,8 +212,3 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     
     # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
     st.markdown("---")
-    st.write("### 📉 Premium Risk Profiling: Value-at-Risk (VaR) Distribution")
-    
-    portfolio_value = 10000.0
-    days = 10
-    
