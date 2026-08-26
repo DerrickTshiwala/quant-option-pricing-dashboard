@@ -29,7 +29,6 @@ def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
     Automatically fires unique user login credentials right to the customer's inbox.
     """
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
-    
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
         st.sidebar.info(f"💾 **Simulation Mode:** Mailer engine compiled successfully. Auto-generated credentials for `{recipient_email}` have been securely saved to the active cloud database logs.")
         return True
@@ -96,7 +95,6 @@ if tier_mode == "Institutional Pro ($49/mo)":
 
 if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.markdown("---")
-    # LINKED DIRECTLY TO YOUR COMPREHENSIVE LIVE TRANSACTION GATEWAY
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
     
@@ -161,7 +159,6 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- INDUCTIVE MATRIX CORRECTIONS: EXTRACT EXPLICIT KEY ELEMENT ELEMENTS SAFELY ---
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
@@ -169,14 +166,11 @@ if N >= 2:
     V_up_up = option_tree[2][0]
     V_up_down = option_tree[2][1]
     V_down_down = option_tree[2][2]
-    
     S_up_up = stock_tree[2][0]
     S_up_down = stock_tree[2][1]
     S_down_down = stock_tree[2][2]
-    
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
-    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -191,7 +185,6 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Render trajectory chart canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -221,5 +214,7 @@ with col_meta:
 st.markdown("---")
 st.write("### 🏛️ Premium Quantitative Desk Layer")
 
+# STANDALONE BROKER WRAPPER: Implements strict function design to avoid nesting errors
 def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
+        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
