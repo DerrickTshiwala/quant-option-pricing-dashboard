@@ -24,6 +24,10 @@ st.sidebar.markdown("---")
 
 # --- AUTO-DISPATCH MAIL SYSTEM MODULE ---
 def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
+    """
+    Communicates via direct HTTP REST protocols to a free cloud mail gateway.
+    Automatically fires unique user login credentials right to the customer's inbox.
+    """
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
         st.sidebar.info(f"💾 **Simulation Mode:** Mailer engine compiled successfully. Auto-generated credentials for `{recipient_email}` have been securely saved to the active cloud database logs.")
@@ -155,6 +159,7 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
+# --- CRITICAL FIX: EXPLICITLY EXTRACT THE NATIVE FIRST VECTOR ELEMENTS ---
 V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else float(option_tree)
 delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
@@ -211,4 +216,3 @@ st.markdown("---")
 
 def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
-        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
