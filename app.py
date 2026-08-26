@@ -106,17 +106,17 @@ for i in range(N - 1, -1, -1):
     option_tree[i] = np.maximum(continuation, intrinsic)
 
 # --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
-V_0 = float(option_tree[0][0])
-delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
+V_0 = float(option_tree)
+delta_root = float(delta_tree) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][0]
-    V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
+    V_up_up = option_tree
+    V_up_down = option_tree
+    V_down_down = option_tree
     
-    S_up_up = stock_tree[2][0]
-    S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
+    S_up_up = stock_tree
+    S_up_down = stock_tree
+    S_down_down = stock_tree
     
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
@@ -164,7 +164,7 @@ with col_meta:
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
-st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
+st.write("### ### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
 if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
@@ -174,7 +174,7 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
     g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
     
-    # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
+    # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-Risk (VaR) PARAMETRIC HISTOGRAM ENGINE ---
     st.markdown("---")
     st.write("### 📉 Premium Risk Profiling: Value-at-Risk (VaR) Distribution")
     
@@ -196,10 +196,13 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     with v_col2:
         fig_var = go.Figure()
         fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        # Draw explicit VaR boundary line
+        
+        # Add explicit vertical line anchor indicating the exact value threshold boundary
         fig_var.add_shape(
-            type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
-            yref="paper", line=dict(color="Crimson", width=3, dash="dot")
+            type="line",
+            x0=var_threshold, y0=0, x1=var_threshold, y1=1,
+            yref="paper",
+            line=dict(color="Crimson", width=3, dash="dot")
         )
         fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
