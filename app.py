@@ -6,29 +6,35 @@ import yfinance as yf
 import io
 import hashlib
 import uuid
-from alpaca_trade_api.rest import REST, TimeFrame
+import requests
 
 # --- STREAMLIT MASTER UI SETTINGS ---
 st.set_page_config(layout="wide", page_title="Institutional Options Engine & SaaS Hub")
 st.title("🏛️ Enterprise Option Pricing & Quantitative SaaS Network")
 st.markdown("---")
 
+# --- REVENUE STREAMS & SPONSORED SLOTS ---
+st.sidebar.markdown("### 📢 SPONSORED TRADING PARTNERS")
+st.sidebar.info(
+    "💡 **Trade Algos Live with Alpaca API**\n\n"
+    "Ready to scale your automated strategies? Open a free zero-commission broker account via our link below:\n\n"
+    "[👉 Register for Alpaca Developer Sandbox](https://alpaca.markets)"
+)
+st.sidebar.markdown("---")
+
 # --- INITIALIZE IN-MEMORY AUTONOMOUS DATABASE (R0,00 ALTERNATIVE) ---
-# In a full external setup, this connects via: supabase = create_client(url, key)
 if "user_db" not in st.session_state:
     st.session_state["user_db"] = {
-        # Securely maps randomly generated transaction tokens to isolated client profiles
         "user_alpha": hashlib.sha256("QuantPro99_A".encode()).hexdigest(),
         "user_beta": hashlib.sha256("QuantPro99_B".encode()).hexdigest()
     }
 if "order_history" not in st.session_state:
     st.session_state["order_history"] = []
 
-# --- LIVE BROKER ACCOUNT ROUTER SETUP (ALPACA API) ---
-# Replace placeholders with your free Alpaca Sandbox Paper keys to route real orders instantly
+# --- LIVE BROKER ACCOUNT ROUTER SETUP (ALPACA DIRECT REST LINK) ---
 ALPACA_API_KEY = st.sidebar.text_input("🔑 Alpaca API Key ID", value="MOCK_KEY_ID", type="password")
 ALPACA_SECRET_KEY = st.sidebar.text_input("🔑 Alpaca Secret Key", value="MOCK_SECRET_KEY", type="password")
-ALPACA_BASE_URL = "https://alpaca.markets" # Sandbox Environment Endpoint Line
+ALPACA_BASE_URL = "https://alpaca.markets" 
 
 # --- SAAS SUBSCRIPTION LOGIN SUBSYSTEM ---
 st.sidebar.header("🔐 Premium Access Console")
@@ -41,7 +47,6 @@ if tier_mode == "Institutional Pro ($49/mo)":
     client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
         hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
-        # Scan data rows dynamically
         for user, stored_hash in st.session_state["user_db"].items():
             if hashed_input == stored_hash:
                 authenticated = True
@@ -56,8 +61,6 @@ if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
     
-    # --- AUTOMATED WEBHOOK SIMULATOR ---
-    # Shows how the database intercepts a Paystack payment and fires out an instant password key
     st.sidebar.markdown("### 🤖 Developer Sandbox Activation")
     if st.sidebar.button("🤖 Simulate Successful Paystack Webhook (R0,00 test)"):
         generated_password = f"QuantPro_{str(uuid.uuid4())[:6]}"
@@ -73,7 +76,7 @@ K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 100.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
-M = 10000  # Path cap
+M = 20000  # Path cap
 
 # --- DATA STREAM PIPELINE ---
 S0, sigma = 100.0, 0.25
@@ -113,16 +116,16 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree)
-delta_root = float(delta_tree) if N > 0 else 0.0
+V_0 = float(option_tree[0][0])
+delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    V_up_up = option_tree[2][2]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][0]
+    S_up_up = stock_tree[2][2]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][0]
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
@@ -139,7 +142,6 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Trajectory curve canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -174,7 +176,7 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     
     g1, g2, g3 = st.columns(3)
     g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
-    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
+    g2.metric(label="Gamma (Γ) - Curvature Acceleration", value=f"{gamma_root:.4f}")
     g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
     
     # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
@@ -201,8 +203,9 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
         fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Count", height=240, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
-    # --- LIVE BROKER WIRE LAYER (ALPACA ENGINE TERMINAL) ---
-    st.write("#### 🤖 Automated Broker Order Routing Console (Live Sandbox Link)")
+    # --- LIGHTWEIGHT HTTP REST BROKER ROUTER ---
+    st.write("#### 🤖 Automated Broker Order Routing Console (Direct HTTP Line)")
     order_size = st.number_input("Target Rebalance Volume (Shares)", min_value=1, max_value=2000, value=10)
     order_side = st.selectbox("Execution Side", ["BUY", "SELL"])
     
+    if st.button("⚡ Dispatch Live Order Packet to Broker Execution Layer"):
