@@ -22,12 +22,8 @@ st.sidebar.info(
 )
 st.sidebar.markdown("---")
 
-# --- AUTO-DISPATCH MAIL SYSTEM MODULE (R0,00 INTEGRATION) ---
+# --- AUTO-DISPATCH MAIL SYSTEM MODULE ---
 def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
-    """
-    Communicates via direct HTTP REST protocols to a free cloud mail gateway.
-    Automatically fires unique user login credentials right to the customer's inbox.
-    """
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
         st.sidebar.info(f"💾 **Simulation Mode:** Mailer engine compiled successfully. Auto-generated credentials for `{recipient_email}` have been securely saved to the active cloud database logs.")
@@ -68,7 +64,7 @@ if "user_db" not in st.session_state:
 if "order_history" not in st.session_state:
     st.session_state["order_history"] = []
 
-# --- LIVE BROKER ACCOUNT ROUTER SETUP (ALPACA DIRECT REST LINK) ---
+# --- LIVE BROKER ACCOUNT ROUTER SETUP ---
 ALPACA_API_KEY = st.sidebar.text_input("🔑 Alpaca API Key ID", value="MOCK_KEY_ID", type="password")
 ALPACA_SECRET_KEY = st.sidebar.text_input("🔑 Alpaca Secret Key", value="MOCK_SECRET_KEY", type="password")
 ALPACA_BASE_URL = "https://alpaca.markets" 
@@ -163,17 +159,14 @@ V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][0]
+    V_up_up = option_tree[2][2]
     V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
-    
-    S_up_up = stock_tree[2][0]
+    V_down_down = option_tree[2][0]
+    S_up_up = stock_tree[2][2]
     S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
-    
+    S_down_down = stock_tree[2][0]
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
-    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -216,11 +209,17 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
-# --- SECURE USER INTERFACE ROUTER ---
-if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
-    st.write("### 🏛️ Premium Quantitative Desk Layer")
-    st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
-    
-    g1, g2, g3 = st.columns(3)
-    g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
-    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
+def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
+    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
+        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
+        st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
+        return
+    headers_dict = {
+        "APCA-API-KEY-ID": str(key_id),
+        "APCA-API-SECRET-KEY": str(secret_key),
+        "Content-Type": "application/json"
+    }
+    payload_dict = {
+        "symbol": str(symbol),
+        "qty": str(int(size)),
+        "side": str(side).lower(),
