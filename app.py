@@ -157,7 +157,7 @@ for i in range(N - 1, -1, -1):
 
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
-
+if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
 if N >= 2:
     V_up_up = option_tree[2][0]
     V_up_down = option_tree[2][1]
