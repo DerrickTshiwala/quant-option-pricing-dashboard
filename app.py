@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
 import yfinance as yf
 import io
 import hashlib
@@ -55,7 +54,7 @@ if tier_mode == "Institutional Pro ($49/mo)":
 
 if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.markdown("---")
-    # CONNECTED DIRECTLY TO YOUR COMPREHENSIVE PAYSTACK TRANSACTION FUNNEL
+    # THE RE-TARGETED SECURE BILLING PORTAL
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
 
@@ -66,7 +65,7 @@ K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 100.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
-M = 20000  # Robust path parameters for variance calculations
+M = 20000  # Path cap
 
 # --- DATA STREAM PIPELINE ---
 S0, sigma = 100.0, 0.25
@@ -106,18 +105,22 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree)
-delta_root = float(delta_tree) if N > 0 else 0.0
+# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
+V_0 = float(option_tree[0][0])
+delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    V_up_up = option_tree[2][0]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][2]
+    
+    S_up_up = stock_tree[2][0]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][2]
+    
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
+    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -132,7 +135,7 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Stochastic path engine
+    # Render trajectory chart canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -161,45 +164,39 @@ with col_meta:
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
-st.write("### 🏛 league Institutional Pro Analytics Workspace (Premium Authorization Required)")
+st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
 if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
     
     g1, g2, g3 = st.columns(3)
     g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
-    g2.metric(label="Gamma (Γ) - Curvature Acceleration", value=f"{gamma_root:.4f}")
-    g3.metric(label="Theta (Θ) - Daily Value Decay", value=f"${theta_root:.4f}/day")
+    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
+    g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
     
     # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
     st.markdown("---")
     st.write("### 📉 Premium Risk Profiling: Value-at-Risk (VaR) Distribution")
     
-    # Calculate 10-day 99% VaR for a simulated portfolio sizing of $10,000
     portfolio_value = 10000.0
     days = 10
     confidence_level = 0.99
     
-    # Generate distribution curves of log normal returns
     mean_return = (r - 0.5 * sigma**2) * (days / 252)
     std_return = sigma * np.sqrt(days / 252)
     simulated_returns = np.random.normal(mean_return, std_return, M)
     simulated_losses = portfolio_value * (1 - np.exp(simulated_returns))
     
-    # Extract the exact statistical threshold cut-off
     var_threshold = np.percentile(simulated_losses, confidence_level * 100)
     
     v_col1, v_col2 = st.columns(2)
     v_col1.metric(label=f"Parametric 10-Day 99% Value-at-Risk (VaR)", value=f"${var_threshold:.2f}", delta="- Risk Capital Limit", delta_color="inverse")
-    v_col1.info(f"💡 **Risk Parameter Meaning:** There is a mathematical probability of exactly **1%** that your active option positions will lose more than **${var_threshold:.2f}** over the next 10 tracking market trading days.")
+    v_col1.info(f"💡 **Risk Parameter Meaning:** There is a mathematical probability of exactly **1%** that your active option positions will lose more than **${var_threshold:.2f}** over the next 10 market trading days.")
     
     with v_col2:
-        # Build clean distribution curve using layout plots
         fig_var = go.Figure()
         fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        
-        # Red line mapping out the absolute Var failure drop boundary cut-off point
-        fig_var.add_trace(go.Scatter(x=[var_threshold, var_threshold], y=[0, 1000], mode="lines", line=dict(color="Crimson", width=3, dash="dot"), name="99% VaR Boundary"))
+        fig_var.add_trace(go.Scatter(x=[var_threshold, var_threshold], y=[0, 300], mode="lines", line=dict(color="Crimson", width=3, dash="dot"), name="99% VaR Boundary"))
         fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
@@ -211,3 +208,5 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
 8=FIX.4.4 | 9=210 | 35=D | 49={active_user.upper()}_DESK_{ticker_input} | 56=LIQUIDITY_POOL_ALPHA
 11=ORD_{np.random.randint(100000, 999999)} | 55={ticker_input} | 54=2 | 38={order_size} | 44={V_0:.2f} | 10=084
         """, language="text")
+        st.success(f"✔️ Execution Order logged. Rebalance requirement to freeze risk: **{delta_root * order_size * 100:.2f} shares** of {ticker_input}.")
+else:
