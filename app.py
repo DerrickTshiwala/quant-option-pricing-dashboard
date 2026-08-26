@@ -115,7 +115,7 @@ if tier_mode == "Free Tier Look-Up" or not authenticated:
 # --- CORE PARAMETER INPUTS ---
 st.sidebar.header("⚙️ Global Contract Adjustments")
 ticker_input = st.sidebar.text_input("Enter Market Ticker Symbol", value="AAPL").upper()
-K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 100.0, step=1.0)
+K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 325.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
@@ -163,12 +163,12 @@ V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][0]
+    V_up_up = option_tree[2][2]
     V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
-    S_up_up = stock_tree[2][0]
+    V_down_down = option_tree[2][0]
+    S_up_up = stock_tree[2][2]
     S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
+    S_down_down = stock_tree[2][0]
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
@@ -212,9 +212,11 @@ with col_meta:
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
-st.write("### 🏛️ Premium Quantitative Desk Layer")
 
-# STANDALONE BROKER WRAPPER: Implements strict function design to avoid nesting errors
 def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
         st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
+        st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
+        return
+    headers = {
+        "APCA-API-KEY-ID": key_id,
