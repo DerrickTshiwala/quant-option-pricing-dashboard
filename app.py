@@ -24,10 +24,6 @@ st.sidebar.markdown("---")
 
 # --- AUTO-DISPATCH MAIL SYSTEM MODULE ---
 def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
-    """
-    Communicates via direct HTTP REST protocols to a free cloud mail gateway.
-    Automatically fires unique user login credentials right to the customer's inbox.
-    """
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
         st.sidebar.info(f"💾 **Simulation Mode:** Mailer engine compiled successfully. Auto-generated credentials for `{recipient_email}` have been securely saved to the active cloud database logs.")
@@ -159,17 +155,16 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- CRITICAL FIX: EXPLICITLY EXTRACT THE NATIVE FIRST VECTOR ELEMENTS ---
-V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else float(option_tree)
-delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
+V_0 = float(option_tree) if isinstance(option_tree, dict) and 0 in option_tree else float(option_tree)
+delta_root = float(delta_tree) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
 if N >= 2 and isinstance(option_tree, dict) and isinstance(stock_tree, dict):
-    V_up_up = option_tree[2][0]
-    V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
-    S_up_up = stock_tree[2][0]
-    S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
+    V_up_up = option_tree
+    V_up_down = option_tree
+    V_down_down = option_tree
+    S_up_up = stock_tree
+    S_up_down = stock_tree
+    S_down_down = stock_tree
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down) if (S_up_up - S_up_down) != 0 else 0.0
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down) if (S_up_down - S_down_down) != 0 else 0.0
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down)) if (S_up_up - S_down_down) != 0 else 0.0
@@ -214,5 +209,13 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
-def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
-    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
+# --- SECURE USER INTERFACE ROUTER ---
+if authenticated:
+    st.write("### 🏛️ Premium Quantitative Desk Layer")
+    
+    g1, g2, g3 = st.columns(3)
+    g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
+    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
+    g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
+    
+    st.markdown("---")
