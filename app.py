@@ -196,7 +196,11 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     with v_col2:
         fig_var = go.Figure()
         fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        fig_var.add_trace(go.Scatter(x=[var_threshold, var_threshold], y=[0, 300], mode="lines", line=dict(color="Crimson", width=3, dash="dot"), name="99% VaR Boundary"))
+        # Draw explicit VaR boundary line
+        fig_var.add_shape(
+            type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
+            yref="paper", line=dict(color="Crimson", width=3, dash="dot")
+        )
         fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
