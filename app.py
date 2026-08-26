@@ -172,12 +172,41 @@ with col_meta:
 st.markdown("---")
 st.write("### 🏛️ Premium Quantitative Desk Layer (Institutional Pro Subscription Tier Required)")
 
+# FLAT EXECUTION HANDLER: Eliminates deep button nesting crashes completely
+def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
+    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
+        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
+        st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
+    else:
+        headers = {
+            "APCA-API-KEY-ID": key_id,
+            "APCA-API-SECRET-KEY": secret_key,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "symbol": symbol,
+            "qty": str(int(size)),
+            "side": side.lower(),
+            "type": "market",
+            "time_in_force": "gtc"
+        }
+        try:
+            response = requests.post(f"{base_url}/v2/orders", json=payload, headers=headers)
+            if response.status_code == 200:
+                order_data = response.json()
+                st.success(f"🎉 Trade Dispatched Successfully! Asset: {symbol} | ID: {order_data['id'][:8]} | Status: {order_data['status'].upper()}")
+                st.session_state["order_history"].append({"Ticker": symbol, "Side": side, "Qty": size, "ID": order_data['id'][:8]})
+            else:
+                st.error(f"❌ Broker Rejected Order: {response.text}")
+        except Exception as e:
+            st.error(f"❌ HTTP Execution Connection Refused: {str(e)}")
+
 if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     st.success(f"🔓 Pro Access Authenticated successfully for profile: {active_user.upper()}.")
     
     g1, g2, g3 = st.columns(3)
     g1.metric(label="Delta (Δ) - Hedging Ratio Multiplier", value=f"{delta_root:.4f}")
-    g2.metric(label="Gamma (Γ) - Curvature Acceleration", value=f"{gamma_root:.4f}")
+    g2.metric(label="Gamma (Γ) - Portfolio Curvature Acceleration", value=f"{gamma_root:.4f}")
     g3.metric(label="Theta (Θ) - Structural Daily Value Decay", value=f"${theta_root:.4f}/day")
     
     # --- PRO LEVEL EXTRA FEATURE: VALUE-AT-RISK (VaR) PARAMETRIC HISTOGRAM ENGINE ---
@@ -187,26 +216,3 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     portfolio_value = 10000.0
     days = 10
     
-    mean_return = (r - 0.5 * sigma**2) * (days / 252)
-    std_return = sigma * np.sqrt(days / 252)
-    simulated_returns = np.random.normal(mean_return, std_return, 10000)
-    simulated_losses = portfolio_value * (1 - np.exp(simulated_returns))
-    var_threshold = np.percentile(simulated_losses, 99)
-    
-    v_col1, v_col2 = st.columns(2)
-    v_col1.metric(label=f"Parametric 10-Day 99% Value-at-Risk (VaR)", value=f"${var_threshold:.2f}")
-    v_col1.info(f"💡 **Risk Metric:** There is a 1% chance your positions lose more than ${var_threshold:.2f} over the next 10 market trading days.")
-    
-    with v_col2:
-        fig_var = go.Figure()
-        fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=40, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        fig_var.add_shape(type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1, yref="paper", line=dict(color="Crimson", width=3, dash="dot"))
-        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Count", height=240, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
-        st.plotly_chart(fig_var, use_container_width=True)
-    
-    # --- LIGHTWEIGHT HTTP REST BROKER ROUTER ---
-    st.write("#### 🤖 Automated Broker Order Routing Console (Direct HTTP Line)")
-    order_size = st.number_input("Target Rebalance Volume (Shares)", min_value=1, max_value=2000, value=10)
-    order_side = st.selectbox("Execution Side", ["BUY", "SELL"])
-    
-    if st.button("⚡ Dispatch Live Order Packet to Broker Execution Layer"):
