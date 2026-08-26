@@ -191,7 +191,7 @@ with col_free:
     S_paths[0, :] = S0
     Z = np.random.standard_normal((N, 100))
     for i in range(1, N + 1):
-        S_paths[i, :] = S_paths[i - 1, :] * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) * Z[i - 1, :])
+        S_paths[i, :] = S_paths[i - 1, :] * np.exp((r - 0.5 * sigma ** 2) * dt + sigma * np.sqrt(dt) Z[i - 1, :])
         
     fig = go.Figure()
     for m in range(40):
@@ -219,4 +219,5 @@ def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, curre
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
         st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
         st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
-    else:
+        return
+        
