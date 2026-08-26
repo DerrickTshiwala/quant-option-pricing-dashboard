@@ -186,7 +186,6 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     std_return = sigma * np.sqrt(days / 252)
     simulated_returns = np.random.normal(mean_return, std_return, M)
     simulated_losses = portfolio_value * (1 - np.exp(simulated_returns))
-    
     var_threshold = np.percentile(simulated_losses, confidence_level * 100)
     
     v_col1, v_col2 = st.columns(2)
@@ -196,10 +195,6 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     with v_col2:
         fig_var = go.Figure()
         fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        fig_var.add_shape(
-            type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1,
-            yref="paper", line=dict(color="Crimson", width=3, dash="dot")
-        )
         fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
@@ -213,3 +208,6 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
         """, language="text")
         st.success(f"✔️ Execution Order logged. Rebalance requirement to freeze risk: **{delta_root * order_size * 100:.2f} shares** of {ticker_input}.")
 else:
+    st.error("🔒 Section Locked. Select 'Institutional Pro' in the side menu and enter your valid member passkey to unlock the professional risk metrics layer and value-at-risk projections.")
+
+st.markdown("---")
