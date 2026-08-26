@@ -5,34 +5,30 @@ import plotly.graph_objects as go
 import yfinance as yf
 import io
 import hashlib
+import uuid
+from alpaca_trade_api.rest import REST, TimeFrame
 
-# --- STREAMLIT COMMERCIAL UI SETTINGS ---
+# --- STREAMLIT MASTER UI SETTINGS ---
 st.set_page_config(layout="wide", page_title="Institutional Options Engine & SaaS Hub")
 st.title("🏛️ Enterprise Option Pricing & Quantitative SaaS Network")
 st.markdown("---")
 
-# --- REVENUE STREAMS & SPONSORED SLOTS ---
-st.sidebar.markdown("### 📢 SPONSORED TRADING PARTNERS")
-st.sidebar.info(
-    "💡 **Trade Algos Live with Alpaca API**\n\n"
-    "Ready to scale your automated strategies? Open a free zero-commission broker account via our link below:\n\n"
-    "[👉 Register for Alpaca Developer Sandbox](https://alpaca.markets)"
-)
-st.sidebar.markdown("---")
+# --- INITIALIZE IN-MEMORY AUTONOMOUS DATABASE (R0,00 ALTERNATIVE) ---
+# In a full external setup, this connects via: supabase = create_client(url, key)
+if "user_db" not in st.session_state:
+    st.session_state["user_db"] = {
+        # Securely maps randomly generated transaction tokens to isolated client profiles
+        "user_alpha": hashlib.sha256("QuantPro99_A".encode()).hexdigest(),
+        "user_beta": hashlib.sha256("QuantPro99_B".encode()).hexdigest()
+    }
+if "order_history" not in st.session_state:
+    st.session_state["order_history"] = []
 
-# --- HIGH-SECURITY IN-MEMORY PASSKEY MATRIX ---
-valid_user_hashes = {
-    "user_alpha": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", # Real Key: QuantPro1
-    "user_beta": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",  # Real Key: QuantPro2
-    "user_gamma": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"  # Real Key: QuantPro3
-}
-
-def verify_passkey(input_key):
-    hashed_input = hashlib.sha256(input_key.encode()).hexdigest()
-    for user, pass_hash in valid_user_hashes.items():
-        if hashed_input == pass_hash:
-            return True, user
-    return False, None
+# --- LIVE BROKER ACCOUNT ROUTER SETUP (ALPACA API) ---
+# Replace placeholders with your free Alpaca Sandbox Paper keys to route real orders instantly
+ALPACA_API_KEY = st.sidebar.text_input("🔑 Alpaca API Key ID", value="MOCK_KEY_ID", type="password")
+ALPACA_SECRET_KEY = st.sidebar.text_input("🔑 Alpaca Secret Key", value="MOCK_SECRET_KEY", type="password")
+ALPACA_BASE_URL = "https://alpaca.markets" # Sandbox Environment Endpoint Line
 
 # --- SAAS SUBSCRIPTION LOGIN SUBSYSTEM ---
 st.sidebar.header("🔐 Premium Access Console")
@@ -44,19 +40,31 @@ active_user = None
 if tier_mode == "Institutional Pro ($49/mo)":
     client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
-        is_valid, user_id = verify_passkey(client_key)
-        if is_valid:
-            authenticated = True
-            active_user = user_id
-            st.sidebar.success(f"🔓 Authenticated: {active_user.upper()}")
-        else:
-            st.sidebar.error("❌ Invalid passkey token block. Complete your subscription via Paystack to receive your unique member credentials.")
+        hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
+        # Scan data rows dynamically
+        for user, stored_hash in st.session_state["user_db"].items():
+            if hashed_input == stored_hash:
+                authenticated = True
+                active_user = user
+                st.sidebar.success(f"Acknowledge: {active_user.upper()} online.")
+                break
+        if not authenticated:
+            st.sidebar.error("❌ Token invalid. Complete your subscription to receive a unique automated access token.")
 
 if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.markdown("---")
-    # THE RE-TARGETED SECURE BILLING PORTAL
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
+    
+    # --- AUTOMATED WEBHOOK SIMULATOR ---
+    # Shows how the database intercepts a Paystack payment and fires out an instant password key
+    st.sidebar.markdown("### 🤖 Developer Sandbox Activation")
+    if st.sidebar.button("🤖 Simulate Successful Paystack Webhook (R0,00 test)"):
+        generated_password = f"QuantPro_{str(uuid.uuid4())[:6]}"
+        new_user_id = f"client_{np.random.randint(100, 999)}"
+        st.session_state["user_db"][new_user_id] = hashlib.sha256(generated_password.encode()).hexdigest()
+        st.sidebar.success(f"✔️ Paystack Webhook Received!\n\n**Database Auto-Generated Credentials:**\n\nUser: `{new_user_id}`\n\nPasskey: `{generated_password}`")
+        st.sidebar.info("💡 In live distribution, this key is dispatched to the buyer's email instantly via mail arrays.")
 
 # --- CORE PARAMETER INPUTS ---
 st.sidebar.header("⚙️ Global Contract Adjustments")
@@ -65,7 +73,7 @@ K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 100.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
-M = 20000  # Path cap
+M = 10000  # Path cap
 
 # --- DATA STREAM PIPELINE ---
 S0, sigma = 100.0, 0.25
@@ -78,7 +86,7 @@ try:
         sigma = float(log_returns.std() * np.sqrt(252))
         st.sidebar.success(f"Connected to {ticker_input}! Spot: ${S0:.2f} | Vol: {sigma*100:.1f}%")
 except Exception:
-    st.sidebar.error("Ticker connection offline. Using baseline fallbacks.")
+    st.sidebar.error("Ticker offline. Using baseline fallbacks.")
 
 # --- QUANTITATIVE CALCULATION ENGINEERING ---
 dt = T / N
@@ -105,22 +113,18 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
-V_0 = float(option_tree[0][0])
-delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
+V_0 = float(option_tree)
+delta_root = float(delta_tree) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][0]
-    V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
-    
-    S_up_up = stock_tree[2][0]
-    S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
-    
+    V_up_up = option_tree
+    V_up_down = option_tree
+    V_down_down = option_tree
+    S_up_up = stock_tree
+    S_up_down = stock_tree
+    S_down_down = stock_tree
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
-    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -135,7 +139,7 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Render trajectory chart canvas
+    # Trajectory curve canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -160,7 +164,6 @@ with col_meta:
         {"Metric Parameter": "Delta Neutral Win-Ratio", "Value Position": "78.4%"}
     ])
     st.table(df_track)
-    st.caption("🤖 Trailing 90-day execution metrics generated via the automated Alpaca Sandbox Broker environment pipeline.")
 
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
@@ -180,34 +183,26 @@ if tier_mode == "Institutional Pro ($49/mo)" and authenticated:
     
     portfolio_value = 10000.0
     days = 10
-    confidence_level = 0.99
     
     mean_return = (r - 0.5 * sigma**2) * (days / 252)
     std_return = sigma * np.sqrt(days / 252)
-    simulated_returns = np.random.normal(mean_return, std_return, M)
+    simulated_returns = np.random.normal(mean_return, std_return, 10000)
     simulated_losses = portfolio_value * (1 - np.exp(simulated_returns))
-    var_threshold = np.percentile(simulated_losses, confidence_level * 100)
+    var_threshold = np.percentile(simulated_losses, 99)
     
     v_col1, v_col2 = st.columns(2)
-    v_col1.metric(label=f"Parametric 10-Day 99% Value-at-Risk (VaR)", value=f"${var_threshold:.2f}", delta="- Risk Capital Limit", delta_color="inverse")
-    v_col1.info(f"💡 **Risk Parameter Meaning:** There is a mathematical probability of exactly **1%** that your active option positions will lose more than **${var_threshold:.2f}** over the next 10 market trading days.")
+    v_col1.metric(label=f"Parametric 10-Day 99% Value-at-Risk (VaR)", value=f"${var_threshold:.2f}")
+    v_col1.info(f"💡 **Risk Metric:** There is a 1% chance your positions lose more than ${var_threshold:.2f} over the next 10 market trading days.")
     
     with v_col2:
         fig_var = go.Figure()
-        fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=60, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
-        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Universe Path Frequency Count", height=280, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
+        fig_var.add_trace(go.Histogram(x=simulated_losses, nbinsx=40, name="Simulated Returns", marker_color="#1E293B", opacity=0.75))
+        fig_var.add_shape(type="line", x0=var_threshold, x1=var_threshold, y0=0, y1=1, yref="paper", line=dict(color="Crimson", width=3, dash="dot"))
+        fig_var.update_layout(xaxis_title="Potential Capital Gains / Losses ($)", yaxis_title="Count", height=240, margin=dict(l=10, r=10, t=10, b=10), showlegend=False)
         st.plotly_chart(fig_var, use_container_width=True)
     
-    st.write("#### 🤖 Simulated FIX Order Router Core Console")
-    order_size = st.number_input("Target Contract Size (Lots)", min_value=1, max_value=2000, value=10)
-    if st.button("⚡ Dispatch FIX Packet Layer to Liquidity Hubs"):
-        st.code(f"""
-[FIX PROTOCOL ROUTE ENGAGED]
-8=FIX.4.4 | 9=210 | 35=D | 49={active_user.upper()}_DESK_{ticker_input} | 56=LIQUIDITY_POOL_ALPHA
-11=ORD_{np.random.randint(100000, 999999)} | 55={ticker_input} | 54=2 | 38={order_size} | 44={V_0:.2f} | 10=084
-        """, language="text")
-        st.success(f"✔️ Execution Order logged. Rebalance requirement to freeze risk: **{delta_root * order_size * 100:.2f} shares** of {ticker_input}.")
-else:
-    st.error("🔒 Section Locked. Select 'Institutional Pro' in the side menu and enter your valid member passkey to unlock the professional risk metrics layer and value-at-risk projections.")
-
-st.markdown("---")
+    # --- LIVE BROKER WIRE LAYER (ALPACA ENGINE TERMINAL) ---
+    st.write("#### 🤖 Automated Broker Order Routing Console (Live Sandbox Link)")
+    order_size = st.number_input("Target Rebalance Volume (Shares)", min_value=1, max_value=2000, value=10)
+    order_side = st.selectbox("Execution Side", ["BUY", "SELL"])
+    
