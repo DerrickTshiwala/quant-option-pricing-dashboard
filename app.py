@@ -159,14 +159,17 @@ V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
 if N >= 2:
-    V_up_up = option_tree[2][2]
+    V_up_up = option_tree[2][0]
     V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][0]
-    S_up_up = stock_tree[2][2]
+    V_down_down = option_tree[2][2]
+    
+    S_up_up = stock_tree[2][0]
     S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][0]
+    S_down_down = stock_tree[2][2]
+    
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down)
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down)
+    
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down))
     theta_root = (V_up_down - V_0) / (2 * dt) / 365
 else:
@@ -209,17 +212,13 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
+# INDEPENDENT FLAT EXECUTION FUNCTION BLOCK (CRITICAL WORKAROUND)
 def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
     if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
         st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
         st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
         return
-    headers_dict = {
-        "APCA-API-KEY-ID": str(key_id),
-        "APCA-API-SECRET-KEY": str(secret_key),
-        "Content-Type": "application/json"
-    }
-    payload_dict = {
-        "symbol": str(symbol),
-        "qty": str(int(size)),
-        "side": str(side).lower(),
+        
+    # LINEAR PACKET CONSTRUCTION: Prevents multi-line curly bracket structural failures completely
+    h_dict = dict()
+    h_dict["APCA-API-KEY-ID"] = str(key_id)
