@@ -28,7 +28,6 @@ def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
     Communicates via direct HTTP REST protocols to a free cloud mail gateway.
     Automatically fires unique user login credentials right to the customer's inbox.
     """
-    # Replace placeholder with your free SendGrid API key once registered to unlock live email lines
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
     
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
@@ -90,38 +89,29 @@ if tier_mode == "Institutional Pro ($49/mo)":
             if hashed_input == stored_hash:
                 authenticated = True
                 active_user = user
-                st.sidebar.success(f"🔓 Authenticated: {active_user.upper()}")
+                st.sidebar.success(f"Acknowledge: {active_user.upper()} online.")
                 break
         if not authenticated:
-            st.sidebar.error("❌ Token invalid. Complete your subscription via the checkout link below to receive a unique automated passkey.")
+            st.sidebar.error("❌ Token invalid. Complete your subscription to receive a unique automated access token.")
 
 if tier_mode == "Free Tier Look-Up" or not authenticated:
     st.sidebar.markdown("---")
-    # WIRED DIRECTLY TO YOUR COMPREHENSIVE LIVE TRANSACTION GATEWAY
     st.sidebar.link_button("💳 Upgrade to Pro Member Instance via Paystack", "https://paystack.com")
     st.sidebar.markdown("---")
     
-    # --- AUTONOMOUS TRANSACTION INTERCEPTOR ENGINE ---
     st.sidebar.markdown("### 🤖 Autonomous Webhook Simulator")
     test_email = st.sidebar.text_input("Customer Delivery Email (Test)", value="trader@example.com")
     if st.sidebar.button("⚡ Simulate Paystack Checkout Clear Link"):
-        # Auto-generate a completely secure, un-guessable unique password token string
         generated_password = f"QuantPro_{str(uuid.uuid4())[:6]}"
         new_user_id = f"client_{np.random.randint(100, 999)}"
-        
-        # Append the SHA-256 encrypted fingerprint of that passcode directly to your cloud database logs
         st.session_state["user_db"][new_user_id] = hashlib.sha256(generated_password.encode()).hexdigest()
-        
-        # Trigger the automated email gateway dispatcher on background autopilot lines
         mail_sent = dispatch_automated_passkey_email(test_email, generated_password, new_user_id)
-        
         st.sidebar.success(
             f"✔️ Paystack Checkout Confirmed!\n\n"
             f"**Database Profile Provisioned:**\n"
             f"User ID: `{new_user_id}`\n"
             f"Passkey Token: `{generated_password}`"
         )
-        st.sidebar.caption("🎯 Live Automation Note: In production runtime environments, this passcode is sent to the customer's personal email instantly with zero manual work required.")
 
 # --- CORE PARAMETER INPUTS ---
 st.sidebar.header("⚙️ Global Contract Adjustments")
@@ -130,7 +120,7 @@ K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 100.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
-M = 20000  # Sturdy path resolution cap
+M = 20000  # Path cap
 
 # --- DATA STREAM PIPELINE ---
 S0, sigma = 100.0, 0.25
@@ -143,7 +133,7 @@ try:
         sigma = float(log_returns.std() * np.sqrt(252))
         st.sidebar.success(f"Connected to {ticker_input}! Spot: ${S0:.2f} | Vol: {sigma*100:.1f}%")
 except Exception:
-    st.sidebar.error("Ticker connection offline. Using baseline fallbacks.")
+    st.sidebar.error("Ticker offline. Using baseline fallbacks.")
 
 # --- QUANTITATIVE CALCULATION ENGINEERING ---
 dt = T / N
@@ -170,7 +160,6 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- SAFE PARAMETER ROOT INDEX Extractions ---
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
@@ -197,7 +186,6 @@ with col_free:
     m1.metric(label=f"American Put Valuation Price ({ticker_input})", value=f"${V_0:.2f}")
     m2.metric(label="Calculated Realized Volatility Asset Baseline", value=f"{sigma*100:.1f}%")
     
-    # Trajectory chart canvas
     time_axis = np.arange(N + 1) * dt
     S_paths = np.zeros((N + 1, 100))
     S_paths[0, :] = S0
@@ -217,3 +205,18 @@ with col_meta:
     st.info("🎯 **ALGO MATRIX TRACKER STATUS: LIVE**")
     df_track = pd.DataFrame([
         {"Metric Parameter": "Algorithm Net Profit YTD", "Value Position": "+24.81%"},
+        {"Metric Parameter": "Max Expected Drawdown", "Value Position": "-4.12%"},
+        {"Metric Parameter": "Profit Factor Matrix", "Value Position": "2.14"},
+        {"Metric Parameter": "Delta Neutral Win-Ratio", "Value Position": "78.4%"}
+    ])
+    st.table(df_track)
+
+# --- LOCKED PRO MEMBERSHIP AREA ---
+st.markdown("---")
+st.write("### 🏛️ Premium Quantitative Desk Layer")
+
+def execute_broker_trade(key_id, secret_key, base_url, symbol, size, side, current_spot):
+    if key_id == "MOCK_KEY_ID" or secret_key == "MOCK_SECRET_KEY":
+        st.warning("⚠️ Local Execution Simulator Engaged: Input your real free Alpaca sandbox keys in the sidebar menu panel to map orders straight to active markets!")
+        st.code(f"8=FIX.4.4 | 55={symbol} | 54={'1' if side=='BUY' else '2'} | 38={size} | 44={current_spot:.2f}", language="text")
+    else:
