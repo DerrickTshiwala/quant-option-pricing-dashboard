@@ -4,5 +4,4 @@ streamlit
 plotly
 openpyxl
 yfinance
-supabase
-alpaca-trade-api
+requests
