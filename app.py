@@ -105,7 +105,7 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- FIXED TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
+# --- TYPE-SAFE RISK PARAMETER INDEX EXTRACTIONS ---
 V_0 = float(option_tree[0][0])
 delta_root = float(delta_tree[0][0]) if N > 0 else 0.0
 
