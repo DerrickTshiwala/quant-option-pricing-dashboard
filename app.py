@@ -160,16 +160,17 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-V_0 = float(option_tree) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
-delta_root = float(delta_tree) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
+# --- TYPE-SAFE ROOT NODE ELEMENT EXTRACTION HUB ---
+V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
+delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
 if N >= 2 and isinstance(option_tree, dict) and isinstance(stock_tree, dict):
-    V_up_up = option_tree
-    V_up_down = option_tree
-    V_down_down = option_tree
-    S_up_up = stock_tree
-    S_up_down = stock_tree
-    S_down_down = stock_tree
+    V_up_up = option_tree[2][0]
+    V_up_down = option_tree[2][1]
+    V_down_down = option_tree[2][2]
+    S_up_up = stock_tree[2][0]
+    S_up_down = stock_tree[2][1]
+    S_down_down = stock_tree[2][2]
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down) if (S_up_up - S_up_down) != 0 else 0.0
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down) if (S_up_down - S_down_down) != 0 else 0.0
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down)) if (S_up_up - S_down_down) != 0 else 0.0
@@ -204,7 +205,6 @@ with col_meta:
     st.write("### 📈 Verified Paper Algo Performance Log")
     st.info("🎯 **ALGO MATRIX TRACKER STATUS: LIVE**")
     
-    # --- FLATTENED MATRIX LOG TO PREVENT SYNTAX CRASHES ---
     df_track = pd.DataFrame({
         "Metric Parameter": ["Algorithm Net Profit YTD", "Max Expected Drawdown", "Profit Factor Matrix", "Delta Neutral Win-Ratio"],
         "Value Position": ["+24.81%", "-4.12%", "2.14", "78.4%"]
@@ -216,5 +216,3 @@ st.markdown("---")
 
 # --- SECURE USER INTERFACE ROUTER ---
 if st.session_state["is_pro_authenticated"]:
-    st.write("### 🏛️ Premium Quantitative Desk Layer")
-    
