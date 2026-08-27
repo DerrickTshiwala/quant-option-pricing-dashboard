@@ -24,6 +24,10 @@ st.sidebar.markdown("---")
 
 # --- AUTO-DISPATCH MAIL SYSTEM MODULE ---
 def dispatch_automated_passkey_email(recipient_email, unique_token, user_id):
+    """
+    Communicates via direct HTTP REST protocols to a free cloud mail gateway.
+    Automatically fires unique user login credentials right to the customer's inbox.
+    """
     SENDGRID_API_KEY = "YOUR_SENDGRID_FREE_API_KEY"
     if SENDGRID_API_KEY == "YOUR_SENDGRID_FREE_API_KEY":
         st.sidebar.info(f"💾 **Simulation Mode:** Mailer engine compiled successfully. Auto-generated credentials for `{recipient_email}` have been securely saved to the active cloud database logs.")
@@ -116,7 +120,7 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
 # --- CORE PARAMETER INPUTS ---
 st.sidebar.header("⚙️ Global Contract Adjustments")
 ticker_input = st.sidebar.text_input("Enter Market Ticker Symbol", value="AAPL").upper()
-K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 325.0, step=1.0)
+K = st.sidebar.slider("Option Strike Limit (K)", 10.0, 500.0, 105.0, step=1.0)
 r = st.sidebar.slider("Risk-Free Macro Rate (r)", 0.01, 0.15, 0.05, step=0.01)
 T = st.sidebar.slider("Contract Expiry Window (T in Years)", 0.05, 2.0, 0.25, step=0.05)
 N = st.sidebar.slider("Binomial Lattice Resolution (N Steps)", 5, 100, 25, step=1)
@@ -160,17 +164,16 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- THE RESOLUTION: TARGET EXPLICIT CELL COORDINATE ROOT ELEMENT ARRAYS ---
-V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
-delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
+V_0 = float(option_tree) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
+delta_root = float(delta_tree) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
 if N >= 2 and isinstance(option_tree, dict) and isinstance(stock_tree, dict):
-    V_up_up = option_tree[2][0]
-    V_up_down = option_tree[2][1]
-    V_down_down = option_tree[2][2]
-    S_up_up = stock_tree[2][0]
-    S_up_down = stock_tree[2][1]
-    S_down_down = stock_tree[2][2]
+    V_up_up = option_tree
+    V_up_down = option_tree
+    V_down_down = option_tree
+    S_up_up = stock_tree
+    S_up_down = stock_tree
+    S_down_down = stock_tree
     delta_up = (V_up_up - V_up_down) / (S_up_up - S_up_down) if (S_up_up - S_up_down) != 0 else 0.0
     delta_down = (V_up_down - V_down_down) / (S_up_down - S_down_down) if (S_up_down - S_down_down) != 0 else 0.0
     gamma_root = (delta_up - delta_down) / (0.5 * (S_up_up - S_down_down)) if (S_up_up - S_down_down) != 0 else 0.0
@@ -208,7 +211,3 @@ with col_meta:
         {"Metric Parameter": "Algorithm Net Profit YTD", "Value Position": "+24.81%"},
         {"Metric Parameter": "Max Expected Drawdown", "Value Position": "-4.12%"},
         {"Metric Parameter": "Profit Factor Matrix", "Value Position": "2.14"},
-        {"Metric Parameter": "Delta Neutral Win-Ratio", "Value Position": "78.4%"}
-    ])
-    st.table(df_track)
-
