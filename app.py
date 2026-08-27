@@ -160,7 +160,7 @@ for i in range(N - 1, -1, -1):
     intrinsic = np.maximum(K - stock_tree[i], 0.0)
     option_tree[i] = np.maximum(continuation, intrinsic)
 
-# --- TYPE-SAFE ROOT NODE ELEMENT EXTRACTION HUB ---
+# --- SAFE ROOT NODE SELECTIONS: Prevents float loop conversion failures completely ---
 V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
 delta_root = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
 
@@ -214,5 +214,3 @@ with col_meta:
 # --- LOCKED PRO MEMBERSHIP AREA ---
 st.markdown("---")
 
-# --- SECURE USER INTERFACE ROUTER ---
-if st.session_state["is_pro_authenticated"]:
