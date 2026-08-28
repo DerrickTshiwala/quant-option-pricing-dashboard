@@ -4,6 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.graph_objects as go
 import yfinance as yf
 from scipy.stats import norm
@@ -18,15 +19,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject PWA service workers for mobile standalone capability
-st.markdown("""
+# Safe native HTML injection wrapper to completely bypass markdown type restrictions
+components.html("""
     <link rel="manifest" href="./static/manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./static/sw.js');
         }
     </script>
-""", unsafe_with_html=True)
+""", height=0, width=0)
 
 # Custom Institutional Dark Aesthetic CSS Injection
 st.markdown("""
@@ -194,7 +195,7 @@ with st.sidebar:
         
     strategy_selection = st.selectbox("Strategy Execution Target", strategy_options)
 
-# Execution Track (Try block completely bypassed here to prevent trailing structural indentation failures)
+# Execution Track
 spot, historical_volatility = fetch_global_market_data(ticker_input)
 
 s1, s2, s3 = st.columns(3)
