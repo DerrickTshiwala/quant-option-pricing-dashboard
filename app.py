@@ -9,7 +9,7 @@ import yfinance as yf
 from scipy.stats import norm
 
 # ============================================================
-# PHASE 1 & 2: ENTERPRISE UI & CONFIGURATION STRUCT
+# PHASE 1, 2 & 8: PWA MOBILE HEADERS & UI CONFIGURATION
 # ============================================================
 st.set_page_config(
     layout="wide",
@@ -18,7 +18,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Institutional CSS Injection for Professional Aesthetics
+# Inject PWA service workers for absolute mobile compatibility
+st.markdown("""
+    <link rel="manifest" href="./static/manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./static/sw.js');
+        }
+    </script>
+""", unsafe_with_html=True)
+
+# Custom Institutional Dark Aesthetic CSS Injection
 st.markdown("""
     <style>
     .reportview-container { background: #0E1114; }
@@ -44,10 +54,8 @@ st.markdown("""
 # ============================================================
 # PHASE 4: GLOBAL USER DATABASE & SUBSCRIPTION ENGINE
 # ============================================================
-# In-memory secure hashing system matching your zero-rand infrastructure
 if "user_database" not in st.session_state:
     st.session_state.user_database = {
-        # Username: (SHA256 of Password, Subscription Tier)
         "wqu_peer_free": (hashlib.sha256("QuantFree2026".encode()).hexdigest(), "Free"),
         "enterprise_client": (hashlib.sha256("AlphaPro99".encode()).hexdigest(), "Premium Premium"),
         "homii_admin": (hashlib.sha256("InventoryCore101".encode()).hexdigest(), "Premium Premium")
@@ -85,8 +93,6 @@ def fetch_global_market_data(ticker):
         raise ValueError("Asset chronological records are insufficient for calculation standard bounds.")
         
     current_spot = float(close_series.iloc[-1])
-    
-    # Financial Engineering Vol Vector computation
     log_returns = np.log(close_series / close_series.shift(1)).dropna()
     annualized_vol = float(log_returns.std() * np.sqrt(252)) if len(log_returns) > 0 else 0.25
     return current_spot, annualized_vol
@@ -123,22 +129,18 @@ def calculate_strategy_payoff_contour(strategy_name, spot_grid, K, T, r, sigma, 
     
     for s in spot_grid:
         if strategy_name == "Bull Call Spread":
-            # Long Lower Strike K, Short Higher Strike K * 1.10
             k_long, k_short = K, K * 1.10
             p_l, _, _, _, _ = black_scholes_greeks_engine(s, k_long, T, r, sigma, "call")
             p_s, _, _, _, _ = black_scholes_greeks_engine(s, k_short, T, r, sigma, "call")
             val_today = p_l - p_s
             val_expiry = max(0.0, s - k_long) - max(0.0, s - k_short)
-            
         elif strategy_name == "Bear Put Spread":
-            # Long Higher Strike K, Short Lower Strike K * 0.90
             k_long, k_short = K, K * 0.90
             p_l, _, _, _, _ = black_scholes_greeks_engine(s, k_long, T, r, sigma, "put")
             p_s, _, _, _, _ = black_scholes_greeks_engine(s, k_short, T, r, sigma, "put")
             val_today = p_l - p_s
             val_expiry = max(0.0, k_long - s) - max(0.0, k_short - s)
-            
-        else: # Institutional Straddle Combination
+        else:
             p_c, _, _, _, _ = black_scholes_greeks_engine(s, K, T, r, sigma, "call")
             p_p, _, _, _, _ = black_scholes_greeks_engine(s, K, T, r, sigma, "put")
             val_today = p_c + p_p
@@ -150,13 +152,12 @@ def calculate_strategy_payoff_contour(strategy_name, spot_grid, K, T, r, sigma, 
     return prices_today, prices_at_expiry
 
 # ============================================================
-# SAAS FRONTEND ARCHITECTURE DESIGN INTERFACE
+# UI FRAMEWORK
 # ============================================================
 st.title("🏛️ Institutional Option Pricing SaaS Engine")
 st.caption("Automated Multi-Leg Strategy Lab & Risk Metrics Router | Powered by Financial Engineering Architecture")
 st.markdown("---")
 
-# Enterprise Management Security Sidebar Portal
 with st.sidebar:
     st.header("🔑 Enterprise Access Panel")
     if not st.session_state.auth_status["authenticated"]:
@@ -169,7 +170,7 @@ with st.sidebar:
                 st.session_state.auth_status["authenticated"] = True
                 st.session_state.auth_status["username"] = input_user
                 st.session_state.auth_status["tier"] = "Premium Premium"
-                st.success(f"Connected to Cluster: Tier ({st.session_state.auth_status['tier']})")
+                st.success(f"Connected: Tier ({st.session_state.auth_status['tier']})")
                 st.rerun()
             else:
                 st.error("Access credentials mismatch. Public Sandbox mode enforced.")
@@ -184,7 +185,6 @@ with st.sidebar:
     st.header("⚙️ Strategy Selector Matrix")
     ticker_input = st.text_input("Target Asset Ticket Profile", value="AAPL").upper().strip()
     
-    # Subscription Access Control Gating Check
     strategy_options = ["Long Straddle"]
     if st.session_state.auth_status["tier"] == "Premium Premium":
         strategy_options = ["Bull Call Spread", "Bear Put Spread", "Long Straddle"]
@@ -194,11 +194,9 @@ with st.sidebar:
         
     strategy_selection = st.selectbox("Strategy Execution Target", strategy_options)
 
-# Main Application Frame Processing Flow
 try:
     spot, historical_volatility = fetch_global_market_data(ticker_input)
     
-    # Infrastructure Status Layout metrics
     s1, s2, s3 = st.columns(3)
     s1.metric(label=f"📊 {ticker_input} Asset Spot Price", value=f"${spot:,.2f}")
     s2.metric(label="📈 Realized Baseline Vol (180D Log)", value=f"{historical_volatility * 100:.2f}%")
@@ -213,3 +211,9 @@ try:
     with c3:
         risk_free_rate = st.number_input("Benchmark Secure Interest Rate % (SOFR)", value=5.15, step=0.05) / 100
     with c4:
+        implied_vol_param = st.slider("Implied Parameter Matrix Shape (IV %)", min_value=3.0, max_value=175.0, value=float(historical_volatility*100)) / 100
+
+    T_years = days_to_expiration / 365.0
+
+    if strategy_selection == "Bull Call Spread":
+        p1, d1, g1, v1, t1 = black_scholes_greeks_engine(spot, strike_price, T_years, risk_free_rate, implied_vol_param, "call")
