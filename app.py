@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject PWA service workers for absolute mobile compatibility
+# Inject PWA service workers for mobile standalone capability
 st.markdown("""
     <link rel="manifest" href="./static/manifest.json">
     <script>
@@ -194,6 +194,7 @@ with st.sidebar:
         
     strategy_selection = st.selectbox("Strategy Execution Target", strategy_options)
 
+# Open try statement execution block
 try:
     spot, historical_volatility = fetch_global_market_data(ticker_input)
     
