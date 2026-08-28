@@ -1,763 +1,215 @@
 import os
 import hashlib
 import math
-
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import plotly.graph_objects as go
 import yfinance as yf
 from scipy.stats import norm
 
-
 # ============================================================
-# STREAMLIT CONFIG
+# PHASE 1 & 2: ENTERPRISE UI & CONFIGURATION STRUCT
 # ============================================================
 st.set_page_config(
     layout="wide",
     page_title="Institutional Options Engine & SaaS Hub",
     page_icon="🏛️",
+    initial_sidebar_state="expanded"
 )
 
-st.title("🏛️ Enterprise Option Pricing & Quantitative SaaS Network")
-st.markdown("---")
-
+# Custom Institutional CSS Injection for Professional Aesthetics
+st.markdown("""
+    <style>
+    .reportview-container { background: #0E1114; }
+    .metric-card { 
+        background-color: #161B22; 
+        padding: 20px; 
+        border-radius: 6px; 
+        border: 1px solid #30363D;
+    }
+    div.stButton > button:first-child {
+        background-color: #00D2FF;
+        color: #0E1114;
+        font-weight: bold;
+        border-radius: 4px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #00B2D6;
+        color: #FFFFFF;
+    }
+    </style>
+""", unsafe_with_html=True)
 
 # ============================================================
-# SESSION STATE
+# PHASE 4: GLOBAL USER DATABASE & SUBSCRIPTION ENGINE
 # ============================================================
-if "user_db" not in st.session_state:
-    st.session_state.user_db = {
-        "user_alpha": hashlib.sha256("QuantPro99_A".encode()).hexdigest(),
-        "user_beta": hashlib.sha256("QuantPro99_B".encode()).hexdigest(),
+# In-memory secure hashing system matching your zero-rand infrastructure
+if "user_database" not in st.session_state:
+    st.session_state.user_database = {
+        # Username: (SHA256 of Password, Subscription Tier)
+        "wqu_peer_free": (hashlib.sha256("QuantFree2026".encode()).hexdigest(), "Free"),
+        "enterprise_client": (hashlib.sha256("AlphaPro99".encode()).hexdigest(), "Premium Premium"),
+        "homii_admin": (hashlib.sha256("InventoryCore101".encode()).hexdigest(), "Premium Premium")
     }
 
-if "is_pro_authenticated" not in st.session_state:
-    st.session_state.is_pro_authenticated = False
-
-if "current_active_user" not in st.session_state:
-    st.session_state.current_active_user = None
-
-if "alpaca_logs" not in st.session_state:
-    st.session_state.alpaca_logs = []
-
+if "auth_status" not in st.session_state:
+    st.session_state.auth_status = {"authenticated": False, "username": None, "tier": "Public"}
+if "transaction_logs" not in st.session_state:
+    st.session_state.transaction_logs = []
 
 # ============================================================
-# HELPERS
+# QUANTITATIVE CORE MATHEMATICS ENGINE (WQU-MSCFE SPEC)
 # ============================================================
-def safe_float(value, fallback):
+def safe_numerical_float(value, fallback=0.0):
     try:
         value = float(value)
         return value if math.isfinite(value) else fallback
     except (TypeError, ValueError):
         return fallback
 
-
-@st.cache_data(ttl=300, show_spinner=False)
-def get_market_data(ticker):
-    """Fetch recent market data and annualized realized volatility."""
+@st.cache_data(ttl=600, show_spinner=False)
+def fetch_global_market_data(ticker):
+    """Extracts instantaneous spot and annualized 180-day historical log volatility."""
     ticker = ticker.strip().upper()
-
     if not ticker:
-        raise ValueError("Ticker symbol cannot be empty.")
-
+        raise ValueError("Target ticker registry string validation failed.")
+    
     asset = yf.Ticker(ticker)
-    hist = asset.history(period="3mo", auto_adjust=True)
-
+    hist = asset.history(period="6mo", auto_adjust=True)
     if hist.empty or "Close" not in hist.columns:
-        raise ValueError(f"No market data returned for {ticker}.")
+        raise ValueError(f"Asset look-up failed: Ticker identity '{ticker}' not found.")
+    
+    close_series = pd.to_numeric(hist["Close"], errors="coerce").dropna()
+    if len(close_series) < 5:
+        raise ValueError("Asset chronological records are insufficient for calculation standard bounds.")
+        
+    current_spot = float(close_series.iloc[-1])
+    
+    # Financial Engineering Vol Vector computation
+    log_returns = np.log(close_series / close_series.shift(1)).dropna()
+    annualized_vol = float(log_returns.std() * np.sqrt(252)) if len(log_returns) > 0 else 0.25
+    return current_spot, annualized_vol
 
-    close = pd.to_numeric(hist["Close"], errors="coerce").dropna()
+def black_scholes_greeks_engine(S, K, T, r, sigma, option_type="call"):
+    """Vectorized calculation of premium pricing framework and partial-derivative risk Greeks."""
+    if T <= 0.0001:
+        payoff = max(0.0, S - K) if option_type == "call" else max(0.0, K - S)
+        return payoff, 0.0, 0.0, 0.0, 0.0
 
-    if close.empty:
-        raise ValueError(f"No valid closing prices returned for {ticker}.")
-
-    spot = float(close.iloc[-1])
-
-    if len(close) >= 3:
-        log_returns = np.log(close / close.shift(1)).dropna()
-        volatility = safe_float(
-            log_returns.std(ddof=1) * np.sqrt(252),
-            0.25,
-        )
-    else:
-        volatility = 0.25
-
-    # Prevent invalid/unstable lattice parameters.
-    volatility = float(np.clip(volatility, 1e-6, 5.0))
-
-    return spot, volatility, close
-
-
-def price_american_put_binomial(S0, K, r, T, sigma, N):
-    """
-    Cox-Ross-Rubinstein binomial valuation for an American put.
-    Returns price, root delta and lattice arrays.
-    """
-    if S0 <= 0:
-        raise ValueError("Spot price must be greater than zero.")
-    if K <= 0:
-        raise ValueError("Strike must be greater than zero.")
-    if T <= 0:
-        raise ValueError("Expiry must be greater than zero.")
-    if sigma <= 0:
-        raise ValueError("Volatility must be greater than zero.")
-    if N < 1:
-        raise ValueError("Number of steps must be at least 1.")
-
-    dt = T / N
-    u = np.exp(sigma * np.sqrt(dt))
-    d = 1.0 / u
-
-    # CRR risk-neutral probability.
-    p = (np.exp(r * dt) - d) / (u - d)
-
-    if not 0.0 < p < 1.0:
-        raise ValueError(
-            "Invalid CRR probability. Adjust rate, volatility, expiry, "
-            "or increase the number of lattice steps."
-        )
-
-    discount = np.exp(-r * dt)
-
-    stock_tree = {}
-    option_tree = {}
-    delta_tree = {}
-
-    for i in range(N + 1):
-        stock_tree[i] = np.array(
-            [S0 * (u ** (i - j)) * (d ** j) for j in range(i + 1)],
-            dtype=float,
-        )
-
-    # American put terminal payoff.
-    option_tree[N] = np.maximum(K - stock_tree[N], 0.0)
-
-    # Backward induction with early exercise.
-    for i in range(N - 1, -1, -1):
-        option_tree[i] = np.zeros(i + 1, dtype=float)
-        delta_tree[i] = np.zeros(i + 1, dtype=float)
-
-        for j in range(i + 1):
-            v_up = option_tree[i + 1][j]
-            v_down = option_tree[i + 1][j + 1]
-
-            s_up = stock_tree[i + 1][j]
-            s_down = stock_tree[i + 1][j + 1]
-
-            denominator = s_up - s_down
-            delta_tree[i][j] = (
-                (v_up - v_down) / denominator
-                if abs(denominator) > 1e-14
-                else 0.0
-            )
-
-            continuation = discount * (
-                p * v_up + (1.0 - p) * v_down
-            )
-            intrinsic = max(K - stock_tree[i][j], 0.0)
-
-            option_tree[i][j] = max(continuation, intrinsic)
-
-    return (
-        float(option_tree[0][0]),
-        float(delta_tree[0][0]),
-        stock_tree,
-        option_tree,
-        delta_tree,
-        p,
-        u,
-        d,
-    )
-
-
-def black_scholes_put(S0, K, r, T, sigma):
-    """European Black-Scholes put for reference."""
-    if min(S0, K, T, sigma) <= 0:
-        return np.nan, np.nan
-
-    d1 = (
-        np.log(S0 / K)
-        + (r + 0.5 * sigma**2) * T
-    ) / (sigma * np.sqrt(T))
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
+    
+    if option_type == "call":
+        price = S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
+        delta = norm.cdf(d1)
+        theta = (- (S * norm.pdf(d1) * sigma) / (2 * np.sqrt(T)) - r * K * np.exp(-r * T) * norm.cdf(d2)) / 252
+    else:
+        price = K * np.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
+        delta = norm.cdf(d1) - 1.0
+        theta = (- (S * norm.pdf(d1) * sigma) / (2 * np.sqrt(T)) + r * K * np.exp(-r * T) * norm.cdf(-d2)) / 252
 
-    price = (
-        K * np.exp(-r * T) * norm.cdf(-d2)
-        - S0 * norm.cdf(-d1)
-    )
-    delta = norm.cdf(d1) - 1.0
-
-    return float(price), float(delta)
-
-
-def transmit_alpaca_limit_order(
-    ticker,
-    qty,
-    side,
-    limit_price,
-    api_key,
-    secret_key,
-    environment,
-):
-    """
-    Submit a limit order to Alpaca.
-    Live trading is intentionally explicit; no credentials are hard-coded.
-    """
-    ticker = ticker.strip().upper()
-    side = side.lower().strip()
-
-    if not ticker:
-        return False, "Ticker is required."
-    if side not in {"buy", "sell"}:
-        return False, "Side must be buy or sell."
-    if qty <= 0:
-        return False, "Quantity must be greater than zero."
-    if limit_price <= 0:
-        return False, "Limit price must be greater than zero."
-    if not api_key or not secret_key:
-        return False, "Enter valid Alpaca API credentials first."
-
-    base_url = (
-        "https://paper-api.alpaca.markets"
-        if environment == "Sandbox (Paper Trading)"
-        else "https://api.alpaca.markets"
-    )
-
-    endpoint = f"{base_url}/v2/orders"
-
-    headers = {
-        "APCA-API-KEY-ID": api_key,
-        "APCA-API-SECRET-KEY": secret_key,
-        "Content-Type": "application/json",
-    }
-
-    payload = {
-        "symbol": ticker,
-        "qty": str(qty),
-        "side": side,
-        "type": "limit",
-        "time_in_force": "gtc",
-        "limit_price": str(round(limit_price, 2)),
-    }
-
-    try:
-        response = requests.post(
-            endpoint,
-            json=payload,
-            headers=headers,
-            timeout=20,
-        )
-
-        try:
-            body = response.json()
-        except ValueError:
-            body = {}
-
-        if response.ok:
-            order_id = body.get("id", "Unknown")
-            return True, order_id
-
-        message = (
-            body.get("message")
-            or body.get("code")
-            or f"HTTP {response.status_code}"
-        )
-        return False, str(message)
-
-    except requests.RequestException as exc:
-        return False, f"Network/API error: {exc}"
-
+    gamma = norm.pdf(d1) / (S * sigma * np.sqrt(T))
+    vega = (S * np.sqrt(T) * norm.pdf(d1)) / 100
+    return max(0.0, price), delta, gamma, vega, theta
 
 # ============================================================
-# SIDEBAR: SPONSORED PARTNER
+# PHASE 3: STRATEGY LAB COMPOSITION INFRASTRUCTURE
 # ============================================================
-st.sidebar.markdown("### 📢 SPONSORED TRADING PARTNERS")
-st.sidebar.info(
-    "💡 **Trade Algos Live with Alpaca API**\n\n"
-    "Use Alpaca's official developer resources to configure paper "
-    "or live trading."
-)
-st.sidebar.markdown(
-    "[👉 Visit Alpaca](https://alpaca.markets/)"
-)
-st.sidebar.markdown("---")
-
-
-# ============================================================
-# SIDEBAR: ALPACA
-# ============================================================
-st.sidebar.header("🔌 Brokerage Execution Router")
-
-alpaca_api_key = st.sidebar.text_input(
-    "🔑 Alpaca API Key ID",
-    value=os.getenv("ALPACA_API_KEY", ""),
-    type="password",
-)
-
-alpaca_secret_key = st.sidebar.text_input(
-    "🔑 Alpaca Secret Key",
-    value=os.getenv("ALPACA_SECRET_KEY", ""),
-    type="password",
-)
-
-alpaca_env = st.sidebar.selectbox(
-    "Broker Environment",
-    ["Sandbox (Paper Trading)", "Live Production"],
-)
-
-if alpaca_env == "Live Production":
-    st.sidebar.warning(
-        "⚠️ LIVE mode can submit real orders. Verify every order before sending."
-    )
-
+def calculate_strategy_payoff_contour(strategy_name, spot_grid, K, T, r, sigma, net_premium):
+    """Maps dynamic asset tracking fields across spatial coordinate bands."""
+    prices_today = []
+    prices_at_expiry = []
+    
+    for s in spot_grid:
+        if strategy_name == "Bull Call Spread":
+            # Long Lower Strike K, Short Higher Strike K * 1.10
+            k_long, k_short = K, K * 1.10
+            p_l, _, _, _, _ = black_scholes_greeks_engine(s, k_long, T, r, sigma, "call")
+            p_s, _, _, _, _ = black_scholes_greeks_engine(s, k_short, T, r, sigma, "call")
+            val_today = p_l - p_s
+            val_expiry = max(0.0, s - k_long) - max(0.0, s - k_short)
+            
+        elif strategy_name == "Bear Put Spread":
+            # Long Higher Strike K, Short Lower Strike K * 0.90
+            k_long, k_short = K, K * 0.90
+            p_l, _, _, _, _ = black_scholes_greeks_engine(s, k_long, T, r, sigma, "put")
+            p_s, _, _, _, _ = black_scholes_greeks_engine(s, k_short, T, r, sigma, "put")
+            val_today = p_l - p_s
+            val_expiry = max(0.0, k_long - s) - max(0.0, k_short - s)
+            
+        else: # Institutional Straddle Combination
+            p_c, _, _, _, _ = black_scholes_greeks_engine(s, K, T, r, sigma, "call")
+            p_p, _, _, _, _ = black_scholes_greeks_engine(s, K, T, r, sigma, "put")
+            val_today = p_c + p_p
+            val_expiry = max(0.0, s - K) + max(0.0, K - s)
+            
+        prices_today.append(val_today - net_premium)
+        prices_at_expiry.append(val_expiry - net_premium)
+        
+    return prices_today, prices_at_expiry
 
 # ============================================================
-# SIDEBAR: PREMIUM ACCESS
+# SAAS FRONTEND ARCHITECTURE DESIGN INTERFACE
 # ============================================================
-st.sidebar.header("🔐 Premium Access Console")
-
-tier_mode = st.sidebar.radio(
-    "Account Subscription Tier",
-    ["Free Tier Look-Up", "Institutional Pro (R900/mo)"],
-)
-
-if tier_mode == "Institutional Pro (R900/mo)":
-    client_key = st.sidebar.text_input(
-        "🔑 Enter Pro Member Passkey",
-        type="password",
-    )
-
-    if client_key:
-        hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
-
-        matched_user = next(
-            (
-                user
-                for user, stored_hash in st.session_state.user_db.items()
-                if hashed_input == stored_hash
-            ),
-            None,
-        )
-
-        if matched_user:
-            st.session_state.is_pro_authenticated = True
-            st.session_state.current_active_user = matched_user
-            st.sidebar.success(
-                f"✔️ Access Granted: {matched_user.upper()} Active."
-            )
-        else:
-            st.session_state.is_pro_authenticated = False
-            st.session_state.current_active_user = None
-            st.sidebar.error("❌ Invalid Pro passkey.")
-
-if tier_mode == "Free Tier Look-Up":
-    st.session_state.is_pro_authenticated = False
-    st.session_state.current_active_user = None
-
-
-# ============================================================
-# PAYMENT INFORMATION
-# ============================================================
-if tier_mode == "Institutional Pro (R900/mo)" and not st.session_state.is_pro_authenticated:
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("💳 Secure Payment Gateway")
-
-    st.sidebar.info(
-        "Payment processing is not simulated in this application. "
-        "Connect a verified Paystack backend/webhook before accepting "
-        "real payments and granting Pro access."
-    )
-
-    st.sidebar.markdown(
-        "[👉 Open Paystack](https://paystack.com/)"
-    )
-
-
-# ============================================================
-# SIDEBAR: MODEL PARAMETERS
-# ============================================================
-st.sidebar.header("⚙️ Global Contract Adjustments")
-
-ticker_input = st.sidebar.text_input(
-    "Enter Market Ticker Symbol",
-    value="AAPL",
-).strip().upper()
-
-K = st.sidebar.slider(
-    "Option Strike (K)",
-    min_value=1.0,
-    max_value=1000.0,
-    value=334.0,
-    step=1.0,
-)
-
-r = st.sidebar.slider(
-    "Risk-Free Rate (r)",
-    min_value=0.0,
-    max_value=0.15,
-    value=0.05,
-    step=0.005,
-    format="%.3f",
-)
-
-T = st.sidebar.slider(
-    "Expiry (T in Years)",
-    min_value=0.01,
-    max_value=5.0,
-    value=0.25,
-    step=0.01,
-)
-
-N = st.sidebar.slider(
-    "Binomial Lattice Steps (N)",
-    min_value=5,
-    max_value=300,
-    value=50,
-    step=1,
-)
-
-
-# ============================================================
-# MARKET DATA
-# ============================================================
-S0 = 100.0
-sigma = 0.25
-close_series = pd.Series(dtype=float)
-market_ok = False
-
-try:
-    S0, sigma, close_series = get_market_data(ticker_input)
-    market_ok = True
-
-    st.sidebar.success(
-        f"Connected to {ticker_input}  •  "
-        f"Spot: ${S0:.2f}  •  "
-        f"Realized Vol: {sigma * 100:.1f}%"
-    )
-
-except Exception as exc:
-    st.sidebar.warning(
-        f"Market data unavailable. Using fallback values. ({exc})"
-    )
-
-
-# ============================================================
-# OPTION ENGINE
-# ============================================================
-try:
-    (
-        V_0,
-        delta_val,
-        stock_tree,
-        option_tree,
-        delta_tree,
-        risk_neutral_p,
-        u,
-        d,
-    ) = price_american_put_binomial(
-        S0=S0,
-        K=K,
-        r=r,
-        T=T,
-        sigma=sigma,
-        N=N,
-    )
-
-    european_put, european_delta = black_scholes_put(
-        S0, K, r, T, sigma
-    )
-
-except ValueError as exc:
-    st.error(f"Pricing engine error: {exc}")
-    st.stop()
-
-
-# ============================================================
-# MAIN DASHBOARD
-# ============================================================
-col_free, col_meta = st.columns([2.2, 1])
-
-with col_free:
-    st.subheader(
-        f"📊 Live Public Analytics Market Feed: {ticker_input}"
-    )
-
-    m1, m2, m3 = st.columns(3)
-
-    m1.metric(
-        "American Put Value",
-        f"${V_0:.2f}",
-    )
-
-    m2.metric(
-        "Spot Price",
-        f"${S0:.2f}",
-    )
-
-    m3.metric(
-        "Realized Volatility",
-        f"{sigma * 100:.1f}%",
-    )
-
-    # Monte Carlo visualization.
-    time_axis = np.linspace(0.0, T, N + 1)
-    num_paths = 100
-
-    rng = np.random.default_rng(42)
-    Z = rng.standard_normal((N, num_paths))
-
-    S_paths = np.zeros((N + 1, num_paths))
-    S_paths[0, :] = S0
-
-    for i in range(1, N + 1):
-        S_paths[i, :] = (
-            S_paths[i - 1, :]
-            * np.exp(
-                (r - 0.5 * sigma**2) * (T / N)
-                + sigma * np.sqrt(T / N) * Z[i - 1, :]
-            )
-        )
-
-    fig = go.Figure()
-
-    for m in range(min(40, num_paths)):
-        fig.add_trace(
-            go.Scatter(
-                x=time_axis,
-                y=S_paths[:, m],
-                mode="lines",
-                line=dict(width=0.7),
-                opacity=0.3,
-                showlegend=False,
-            )
-        )
-
-    fig.add_trace(
-        go.Scatter(
-            x=[0, T],
-            y=[K, K],
-            mode="lines",
-            line=dict(width=2, dash="dash"),
-            name="Strike",
-        )
-    )
-
-    fig.update_layout(
-        title="Simulated Asset Price Paths",
-        xaxis_title="Time (years)",
-        yaxis_title="Asset Price ($)",
-        height=500,
-        margin=dict(l=20, r=20, t=60, b=20),
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-with col_meta:
-    st.subheader("📈 Model Diagnostics")
-
-    st.metric(
-        "American Put",
-        f"${V_0:.4f}",
-    )
-
-    st.metric(
-        "European Put Reference",
-        f"${european_put:.4f}",
-    )
-
-    st.metric(
-        "American Premium",
-        f"${max(V_0 - european_put, 0.0):.4f}",
-    )
-
-    st.metric(
-        "Root Delta",
-        f"{delta_val:.4f}",
-    )
-
-    st.metric(
-        "Risk-Neutral Probability",
-        f"{risk_neutral_p:.4f}",
-    )
-
-    st.caption(
-        "The American price includes early-exercise logic; "
-        "the European figure is shown only as a reference."
-    )
-
-
-# ============================================================
-# PRO WORKSPACE
-# ============================================================
+st.title("🏛️ Institutional Option Pricing SaaS Engine")
+st.caption("Automated Multi-Leg Strategy Lab & Risk Metrics Router | Powered by Financial Engineering Architecture")
 st.markdown("---")
 
-if st.session_state.is_pro_authenticated:
-    st.header("🔐 Institutional Pro Workspace")
-
-    tab1, tab2, tab3 = st.tabs(
-        ["📐 Greeks & Lattice", "📤 Order Router", "🧾 Session Log"]
-    )
-
-    with tab1:
-        greek_df = pd.DataFrame(
-            {
-                "Metric": [
-                    "Spot (S₀)",
-                    "Strike (K)",
-                    "Risk-Free Rate",
-                    "Expiry (Years)",
-                    "Volatility",
-                    "CRR Up Factor",
-                    "CRR Down Factor",
-                    "Risk-Neutral Probability",
-                    "American Put",
-                    "European Put",
-                    "American Put Delta",
-                    "European Put Delta",
-                ],
-                "Value": [
-                    S0,
-                    K,
-                    r,
-                    T,
-                    sigma,
-                    u,
-                    d,
-                    risk_neutral_p,
-                    V_0,
-                    european_put,
-                    delta_val,
-                    european_delta,
-                ],
-            }
-        )
-
-        st.dataframe(
-            greek_df,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-        lattice_level = st.slider(
-            "Inspect lattice level",
-            min_value=0,
-            max_value=N,
-            value=min(5, N),
-        )
-
-        lattice_df = pd.DataFrame(
-            {
-                "Node": np.arange(lattice_level + 1),
-                "Stock Price": stock_tree[lattice_level],
-                "Option Value": option_tree[lattice_level],
-            }
-        )
-
-        st.dataframe(
-            lattice_df,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    with tab2:
-        st.warning(
-            "Brokerage execution is disabled until valid credentials are "
-            "entered. Live Production can place real trades."
-        )
-
-        order_col1, order_col2 = st.columns(2)
-
-        with order_col1:
-            order_symbol = st.text_input(
-                "Order Symbol",
-                value=ticker_input,
-            ).strip().upper()
-
-            order_qty = st.number_input(
-                "Quantity",
-                min_value=0.0001,
-                value=1.0,
-                step=1.0,
-            )
-
-        with order_col2:
-            order_side = st.selectbox(
-                "Side",
-                ["buy", "sell"],
-            )
-
-            order_limit = st.number_input(
-                "Limit Price ($)",
-                min_value=0.01,
-                value=max(round(S0, 2), 0.01),
-                step=0.01,
-            )
-
-        confirm_live = False
-
-        if alpaca_env == "Live Production":
-            confirm_live = st.checkbox(
-                "I understand this can submit a real order.",
-                value=False,
-            )
-        else:
-            confirm_live = True
-
-        if st.button(
-            "🚀 Submit Limit Order",
-            type="primary",
-            disabled=not confirm_live,
-        ):
-            success, result = transmit_alpaca_limit_order(
-                ticker=order_symbol,
-                qty=order_qty,
-                side=order_side,
-                limit_price=order_limit,
-                api_key=alpaca_api_key,
-                secret_key=alpaca_secret_key,
-                environment=alpaca_env,
-            )
-
-            log_entry = {
-                "Ticker": order_symbol,
-                "Quantity": order_qty,
-                "Side": order_side,
-                "Limit Price": order_limit,
-                "Environment": alpaca_env,
-                "Result": result,
-            }
-            st.session_state.alpaca_logs.append(log_entry)
-
-            if success:
-                st.success(f"Order accepted. Order ID: {result}")
+# Enterprise Management Security Sidebar Portal
+with st.sidebar:
+    st.header("🔑 Enterprise Access Panel")
+    if not st.session_state.auth_status["authenticated"]:
+        input_user = st.text_input("User ID Profiles", value="enterprise_client")
+        input_pass = st.text_input("Access Verification Token Key", type="password")
+        
+        if st.button("Authenticate Node Terminal", use_container_width=True):
+            hashed_attempt = hashlib.sha256(input_pass.encode()).hexdigest()
+            if input_user in st.session_state.user_database and st.session_state.user_database[input_user][0] == hashed_attempt:
+                st.session_state.auth_status["authenticated"] = True
+                st.session_state.auth_status["username"] = input_user
+                st.session_state.auth_status["tier"] = st.session_state.user_database[input_user][1]
+                st.success(f"Connected to Cluster: Tier ({st.session_state.auth_status['tier']})")
+                st.rerun()
             else:
-                st.error(f"Order rejected: {result}")
+                st.error("Access credentials mismatch. Public Sandbox mode enforced.")
+    else:
+        st.success(f"🔒 Account Secure: {st.session_state.auth_status['username']}")
+        st.info(f"Subscription Profile: Level [{st.session_state.auth_status['tier']}]")
+        if st.button("Terminate Active Session Link", use_container_width=True):
+            st.session_state.auth_status = {"authenticated": False, "username": None, "tier": "Public"}
+            st.rerun()
+            
+    st.markdown("---")
+    st.header("⚙️ Strategy Selector Matrix")
+    ticker_input = st.text_input("Target Asset Ticket Profile", value="AAPL").upper().strip()
+    
+    # Subscription Access Control Gating Check
+    strategy_options = ["Long Straddle"]
+    if st.session_state.auth_status["tier"] == "Premium Premium":
+        strategy_options = ["Bull Call Spread", "Bear Put Spread", "Long Straddle"]
+        st.caption("✅ Premium multi-leg strategy locks released.")
+    else:
+        st.caption("🔒 Premium strategy configurations (Spreads) require account elevation.")
+        
+    strategy_selection = st.selectbox("Strategy Execution Target", strategy_options)
 
-    with tab3:
-        if st.session_state.alpaca_logs:
-            st.dataframe(
-                pd.DataFrame(st.session_state.alpaca_logs),
-                use_container_width=True,
-                hide_index=True,
-            )
-        else:
-            st.info("No order attempts in this session.")
-
-else:
-    st.info(
-        "🔒 Institutional Pro features are locked. "
-        "The public analytics dashboard remains available."
-    )
-
-
-# ============================================================
-# FOOTER
-# ============================================================
-st.markdown("---")
-st.caption(
-    "Quantitative analytics only. Market data may be delayed or unavailable. "
-    "This application does not constitute investment advice."
-)
+# Main Application Frame Processing Flow
+try:
+    spot, historical_volatility = fetch_global_market_data(ticker_input)
+    
+    # Infrastructure Status Layout metrics
+    s1, s2, s3 = st.columns(3)
+    s1.metric(label=f"📊 {ticker_input} Asset Spot Price", value=f"${spot:,.2f}")
+    s2.metric(label="📈 Realized Baseline Vol (180D Log)", value=f"{historical_volatility * 100:.2f}%")
+    s3.metric(label="🌐 Connected User License Node", value=f"{st.session_state.auth_status['tier']} Tier")
+    
+    st.markdown("### 🧮 Option Framework Input Metrics")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        strike_price = st.number_input("Target Core Strike (K)", value=float(round(spot)), step=1.0)
+    with c2:
+        days_to_expiration = st.number_input("Days to Settlement Horizon (DTE)", min_value=1, max_value=730, value=45)
+    with c3:
+        risk_free_rate = st.number_input("Benchmark Secure Interest Rate % (SOFR)", value=5.15, step=0.05) / 100
+    with c4:
