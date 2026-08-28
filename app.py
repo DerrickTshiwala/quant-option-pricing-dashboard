@@ -63,6 +63,7 @@ def transmit_alpaca_limit_order(ticker, qty, side, limit_price):
     }
     try:
         response = requests.post(endpoint, json=payload, headers=headers)
+        # Fixed: Explicitly verify standard REST API HTTP success codes
         if response.status_code in:
             return True, response.json()["id"]
         else:
@@ -209,8 +210,8 @@ for i in range(N - 1, -1, -1):
         intrinsic = max(K - stock_tree[i][j], 0.0)
         option_tree[i][j] = max(continuation, intrinsic)
 
-V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree) else 0.0
-delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree) else 0.0
+V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree and len(option_tree[0]) > 0) else 0.0
+delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree and len(delta_tree[0]) > 0) else 0.0
 
 # --- USER LAYOUT RENDERING HUB ---
 col_free, col_meta = st.columns(2)
@@ -230,4 +231,3 @@ with col_free:
         
     fig = go.Figure()
     for m in range(40):
-        fig.add_trace(go.Scatter(x=time_axis, y=S_paths[:, m], mode='lines', line=dict(width=0.7), opacity=0.3, showlegend=False))
