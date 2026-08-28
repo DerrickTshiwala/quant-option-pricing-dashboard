@@ -62,7 +62,7 @@ def transmit_alpaca_limit_order(ticker, qty, side, limit_price):
     }
     try:
         response = requests.post(endpoint, json=payload, headers=headers)
-        if response.status_code == 200 or response.status_code == 201:
+        if response.status_code in [200, 201]:
             return True, response.json()["id"]
         else:
             return False, response.json().get("message", "API Transaction Rejected")
@@ -73,7 +73,7 @@ def transmit_alpaca_limit_order(ticker, qty, side, limit_price):
 st.sidebar.header("🔐 Premium Access Console")
 tier_mode = st.sidebar.radio("Account Subscription Tier", ["Free Tier Look-Up", "Institutional Pro (R900/mo)"])
 
-if type(tier_mode) == str and tier_mode == "Institutional Pro (R900/mo)":
+if tier_mode == "Institutional Pro (R900/mo)":
     client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
         hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
@@ -207,8 +207,9 @@ for i in range(N - 1, -1, -1):
         intrinsic = max(K - stock_tree[i][j], 0.0)
         option_tree[i][j] = max(continuation, intrinsic)
 
-V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree and len(option_tree[0]) > 0) else 0.0
-delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree and len(delta_tree[0]) > 0) else 0.0
+# Correct structural tree parsing matrix extractions 
+V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree) else 0.0
+delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree) else 0.0
 
 # --- USER LAYOUT RENDERING HUB ---
 col_free, col_meta = st.columns(2)
