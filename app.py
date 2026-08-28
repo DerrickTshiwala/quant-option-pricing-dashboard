@@ -209,8 +209,8 @@ for i in range(N - 1, -1, -1):
         intrinsic = max(K - stock_tree[i][j], 0.0)
         option_tree[i][j] = max(continuation, intrinsic)
 
-V_0 = float(option_tree) if (isinstance(option_tree, dict) and 0 in option_tree and len(option_tree) > 0) else 0.0
-delta_val = float(delta_tree) if (isinstance(delta_tree, dict) and 0 in delta_tree and len(delta_tree) > 0) else 0.0
+V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree and len(option_tree[0]) > 0) else 0.0
+delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree and len(delta_tree[0]) > 0) else 0.0
 
 # --- USER LAYOUT RENDERING HUB ---
 col_free, col_meta = st.columns(2)
