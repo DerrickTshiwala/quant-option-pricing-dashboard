@@ -73,7 +73,7 @@ def transmit_alpaca_limit_order(ticker, qty, side, limit_price):
 st.sidebar.header("🔐 Premium Access Console")
 tier_mode = st.sidebar.radio("Account Subscription Tier", ["Free Tier Look-Up", "Institutional Pro (R900/mo)"])
 
-if tier_mode == "Institutional Pro (R900/mo)":
+if type(tier_mode) == str and tier_mode == "Institutional Pro (R900/mo)":
     client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
         hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
@@ -87,7 +87,7 @@ if tier_mode == "Institutional Pro (R900/mo)":
         else:
             st.sidebar.error("❌ Token invalid. Complete payment processing below to generate live database passkeys.")
 
-# --- DYNAMIC LIVE CHECKOUT BUTTON (FIXED PAYSTACK INJECTION VIA COMPONENTS) ---
+# --- DYNAMIC LIVE CHECKOUT BUTTON (PAYSTACK INJECTION) ---
 if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticated"]:
     st.sidebar.markdown("---")
     st.sidebar.subheader("💳 Secure Payment Gateway")
@@ -207,8 +207,8 @@ for i in range(N - 1, -1, -1):
         intrinsic = max(K - stock_tree[i][j], 0.0)
         option_tree[i][j] = max(continuation, intrinsic)
 
-V_0 = float(option_tree[0][0]) if isinstance(option_tree, dict) and 0 in option_tree else 0.0
-delta_val = float(delta_tree[0][0]) if isinstance(delta_tree, dict) and 0 in delta_tree else 0.0
+V_0 = float(option_tree[0][0]) if (isinstance(option_tree, dict) and 0 in option_tree and len(option_tree[0]) > 0) else 0.0
+delta_val = float(delta_tree[0][0]) if (isinstance(delta_tree, dict) and 0 in delta_tree and len(delta_tree[0]) > 0) else 0.0
 
 # --- USER LAYOUT RENDERING HUB ---
 col_free, col_meta = st.columns(2)
@@ -230,4 +230,3 @@ with col_free:
     for m in range(40):
         fig.add_trace(go.Scatter(x=time_axis, y=S_paths[:, m], mode='lines', line=dict(width=0.7), opacity=0.3, showlegend=False))
     fig.add_trace(go.Scatter(x=[0, T], y=[K, K], mode='lines', line=dict(color='Crimson', width=2, dash='dash'), name='Strike Floor'))
-    fig.update_layout(xaxis_title="Timeline (Years)", yaxis_title="Underlying Spot Value ($)", height=300, margin=dict(l=10, r=10, t=10, b=10))
