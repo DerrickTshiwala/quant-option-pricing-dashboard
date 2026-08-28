@@ -75,7 +75,7 @@ st.sidebar.header("🔐 Premium Access Console")
 tier_mode = st.sidebar.radio("Account Subscription Tier", ["Free Tier Look-Up", "Institutional Pro (R900/mo)"])
 
 if tier_mode == "Institutional Pro (R900/mo)":
-    client_key = st.sidebar.text_input(" Enter Unique Pro Member Passkey", type="password")
+    client_key = st.sidebar.text_input("🔑 Enter Unique Pro Member Passkey", type="password")
     if client_key:
         hashed_input = hashlib.sha256(client_key.encode()).hexdigest()
         for user, stored_hash in st.session_state["user_db"].items():
@@ -88,14 +88,14 @@ if tier_mode == "Institutional Pro (R900/mo)":
         else:
             st.sidebar.error("❌ Token invalid. Complete payment processing below to generate live database passkeys.")
 
-# --- EMTEXT SYSTEM INTERACTIVE LIVE CHECKOUT BUTTON (PAYSTACK INJECTION) ---
+# --- DYNAMIC LIVE CHECKOUT BUTTON (FIXED PAYSTACK INJECTION VIA COMPONENTS) ---
 if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticated"]:
     st.sidebar.markdown("---")
     st.sidebar.subheader("💳 Secure Payment Gateway")
     
     paystack_customer_email = st.sidebar.text_input("Billing Email Address", value="trader@example.com")
     
-    # ⚠️ CRITICAL STEP FOR PAYSTACK COMPLIANCE VERIFICATION: CHANGE "pk_test_..." TO YOUR LIVE KEY IN PRODUCTION
+    # ⚠️ CRITICAL STEP FOR PAYSTACK COMPLIANCE VERIFICATION: CHANGE TO YOUR LIVE KEY IN PROD
     PAYSTACK_PUBLIC_KEY = "pk_test_418726b27e8a931c890ef9d270381fa2c2f9d15c" 
     rand_amount_zar = 900
     paystack_amount_kobo = rand_amount_zar * 100 
@@ -106,18 +106,24 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
     <head>
         <script src="https://paystack.co"></script>
         <style>
+            html, body {{
+                margin: 0;
+                padding: 0;
+                background-color: transparent;
+            }}
             .paystack-btn {{
                 background-color: #38dec1;
                 color: #ffffff;
                 border: none;
-                padding: 12px 24px;
-                font-size: 15px;
+                padding: 12px 16px;
+                font-size: 14px;
                 font-weight: bold;
                 border-radius: 6px;
                 cursor: pointer;
                 width: 100%;
                 text-align: center;
                 box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+                font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;
                 transition: background-color 0.2s;
             }}
             .paystack-btn:hover {{
@@ -126,10 +132,10 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
         </style>
     </head>
     <body>
-        <button type="button" class="paystack-btn" onclick="payWithPaystack()"> 💳 Unlock Premium Workspace (ZAR {rand_amount_zar})</button>
+        <button type="button" class="paystack-btn" onclick="payWithPaystack()">💳 Unlock Premium Workspace (ZAR {rand_amount_zar})</button>
         <script>
             function payWithPaystack() {{
-                let handler = PaystackPop.setup({{
+                var handler = PaystackPop.setup({{
                     key: '{PAYSTACK_PUBLIC_KEY}',
                     email: '{paystack_customer_email}',
                     amount: {paystack_amount_kobo},
@@ -139,7 +145,7 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
                         alert('Payment Cleared Successfully! Reference Token: ' + response.reference + '\\n\\nYour temporary Workspace Passkey is: QuantPro99_A\\n\\nCopy this passkey and paste it into the console text box above.');
                     }},
                     onClose: function() {{
-                        alert('Transaction Cancelled. Premium workspace configuration remain locked.');
+                        alert('Transaction Cancelled. Premium workspace configurations remain locked.');
                     }}
                 }});
                 handler.openIframe();
@@ -149,7 +155,7 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
     </html>
     """
     with st.sidebar:
-        components.html(paystack_html_injector, height=60)
+        components.html(paystack_html_injector, height=50, scrolling=False)
     st.sidebar.markdown("---")
 
 # --- CORE PARAMETER INPUTS ---
@@ -225,8 +231,3 @@ with col_free:
     for m in range(40):
         fig.add_trace(go.Scatter(x=time_axis, y=S_paths[:, m], mode='lines', line=dict(width=0.7), opacity=0.3, showlegend=False))
     fig.add_trace(go.Scatter(x=[0, T], y=[K, K], mode='lines', line=dict(color='Crimson', width=2, dash='dash'), name='Strike Floor'))
-    fig.update_layout(xaxis_title="Timeline (Years)", yaxis_title="Underlying Spot Value ($)", height=300, margin=dict(l=10, r=10, t=10, b=10))
-    st.plotly_chart(fig, use_container_width=True)
-
-with col_meta:
-    st.write("### 📈 Verified Paper Algo Performance Log")
