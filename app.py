@@ -4,13 +4,12 @@ import math
 import numpy as np
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 import plotly.graph_objects as go
 import yfinance as yf
 from scipy.stats import norm
 
 # ============================================================
-# PHASE 1, 2 & 8: PWA MOBILE HEADERS & UI CONFIGURATION
+# PHASE 1 & 2: INSTITUTIONAL PERFORMANCE APP CONFIGURATION
 # ============================================================
 st.set_page_config(
     layout="wide",
@@ -19,38 +18,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Safe native HTML injection wrapper to completely bypass markdown type restrictions
-components.html("""
-    <link rel="manifest" href="./static/manifest.json">
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./static/sw.js');
-        }
-    </script>
-""", height=0, width=0)
-
-# Custom Institutional Dark Aesthetic CSS Injection
-st.markdown("""
-    <style>
-    .reportview-container { background: #0E1114; }
-    .metric-card { 
-        background-color: #161B22; 
-        padding: 20px; 
-        border-radius: 6px; 
-        border: 1px solid #30363D;
-    }
-    div.stButton > button:first-child {
-        background-color: #00D2FF;
-        color: #0E1114;
-        font-weight: bold;
-        border-radius: 4px;
-    }
-    div.stButton > button:first-child:hover {
-        background-color: #00B2D6;
-        color: #FFFFFF;
-    }
-    </style>
-""", unsafe_with_html=True)
+# Custom branding text using native markdown parameters safely
+st.logo("https://flaticon.com")
 
 # ============================================================
 # PHASE 4: GLOBAL USER DATABASE & SUBSCRIPTION ENGINE
@@ -195,7 +164,7 @@ with st.sidebar:
         
     strategy_selection = st.selectbox("Strategy Execution Target", strategy_options)
 
-# Execution Track
+# Clean Execution Flow
 spot, historical_volatility = fetch_global_market_data(ticker_input)
 
 s1, s2, s3 = st.columns(3)
@@ -219,3 +188,13 @@ T_years = days_to_expiration / 365.0
 if strategy_selection == "Bull Call Spread":
     p1, d1, g1, v1, t1 = black_scholes_greeks_engine(spot, strike_price, T_years, risk_free_rate, implied_vol_param, "call")
     p2, d2, g2, v2, t2 = black_scholes_greeks_engine(spot, strike_price*1.10, T_years, risk_free_rate, implied_vol_param, "call")
+    premium, delta, gamma, vega, theta = (p1 - p2), (d1 - d2), (g1 - g2), (v1 - v2), (t1 - t2)
+elif strategy_selection == "Bear Put Spread":
+    p1, d1, g1, v1, t1 = black_scholes_greeks_engine(spot, strike_price, T_years, risk_free_rate, implied_vol_param, "put")
+    p2, d2, g2, v2, t2 = black_scholes_greeks_engine(spot, strike_price*0.90, T_years, risk_free_rate, implied_vol_param, "put")
+    premium, delta, gamma, vega, theta = (p1 - p2), (d1 - d2), (g1 - g2), (v1 - v2), (t1 - t2)
+else:
+    p1, d1, g1, v1, t1 = black_scholes_greeks_engine(spot, strike_price, T_years, risk_free_rate, implied_vol_param, "call")
+    p2, d2, g2, v2, t2 = black_scholes_greeks_engine(spot, strike_price, T_years, risk_free_rate, implied_vol_param, "put")
+    premium, delta, gamma, vega, theta = (p1 + p2), (d1 + d2), (g1 + g2), (v1 + v2), (t1 + t2)
+
