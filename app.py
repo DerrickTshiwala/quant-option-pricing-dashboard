@@ -46,6 +46,7 @@ ALPACA_ENV = st.sidebar.selectbox("Broker Environment Instance", ["Sandbox (Pape
 ALPACA_BASE_URL = "https://alpaca.markets" if ALPACA_ENV == "Sandbox (Paper Trading)" else "https://alpaca.markets"
 
 def transmit_alpaca_limit_order(ticker, qty, side, limit_price):
+    """Executes a cryptographic payload transmission to the Alpaca REST Order API endpoint."""
     endpoint = f"{ALPACA_BASE_URL}/v2/orders"
     headers = {
         "APCA-API-KEY-ID": ALPACA_API_KEY,
@@ -87,13 +88,14 @@ if tier_mode == "Institutional Pro (R900/mo)":
         else:
             st.sidebar.error("❌ Token invalid. Complete payment processing below to generate live database passkeys.")
 
-# --- DYNAMIC LIVE CHECKOUT BUTTON (PAYSTACK INJECTION) ---
+# --- DYNAMIC LIVE CHECKOUT BUTTON (PAYSTACK INJECTION VIA COMPONENTS) ---
 if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticated"]:
     st.sidebar.markdown("---")
     st.sidebar.subheader("💳 Secure Payment Gateway")
     
     paystack_customer_email = st.sidebar.text_input("Billing Email Address", value="trader@example.com")
     
+    # ⚠️ CRITICAL STEP FOR PAYSTACK COMPLIANCE VERIFICATION: CHANGE TO YOUR LIVE KEY IN PROD
     PAYSTACK_PUBLIC_KEY = "pk_test_418726b27e8a931c890ef9d270381fa2c2f9d15c" 
     rand_amount_zar = 900
     paystack_amount_kobo = rand_amount_zar * 100 
@@ -121,7 +123,7 @@ if tier_mode == "Free Tier Look-Up" or not st.session_state["is_pro_authenticate
                 width: 100%;
                 text-align: center;
                 box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;
                 transition: background-color 0.2s;
             }}
             .paystack-btn:hover {{
@@ -229,5 +231,3 @@ with col_free:
     fig = go.Figure()
     for m in range(40):
         fig.add_trace(go.Scatter(x=time_axis, y=S_paths[:, m], mode='lines', line=dict(width=0.7), opacity=0.3, showlegend=False))
-    fig.add_trace(go.Scatter(x=[0, T], y=[K, K], mode='lines', line=dict(color='Crimson', width=2, dash='dash'), name='Strike Floor'))
-    fig.update_layout(xaxis_title="Timeline (Years)", yaxis_title="Underlying Spot Value ($)", height=300, margin=dict(l=10, r=10, t=10, b=10))
