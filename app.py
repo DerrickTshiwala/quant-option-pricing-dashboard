@@ -165,10 +165,10 @@ with st.sidebar:
         
         if st.button("Authenticate Node Terminal", use_container_width=True):
             hashed_attempt = hashlib.sha256(input_pass.encode()).hexdigest()
-            if input_user in st.session_state.user_database and st.session_state.user_database[input_user][0] == hashed_attempt:
+            if input_user in st.session_state.user_database and st.session_state.user_database[input_user] == hashed_attempt:
                 st.session_state.auth_status["authenticated"] = True
                 st.session_state.auth_status["username"] = input_user
-                st.session_state.auth_status["tier"] = st.session_state.user_database[input_user][1]
+                st.session_state.auth_status["tier"] = "Premium Premium"
                 st.success(f"Connected to Cluster: Tier ({st.session_state.auth_status['tier']})")
                 st.rerun()
             else:
